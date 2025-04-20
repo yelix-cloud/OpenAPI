@@ -1,0 +1,11 @@
+{
+  "tasks": {
+    "lint": "deno lint",
+    "test": "deno test --allow-all",
+    "test:coverage-html": "deno test --allow-all --coverage=coverage && deno coverage coverage",
+    "fmt": "deno fmt"
+  },
+  "imports": {
+    "@eemeli/yaml": "jsr:@eemeli/yaml@^2.7.1"
+  }
+}
