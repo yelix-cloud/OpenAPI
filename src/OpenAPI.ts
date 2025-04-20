@@ -401,18 +401,31 @@ class OpenAPI {
       return undefined;
     }
 
-    const path = ref.substring(1).split("/");
-    // deno-lint-ignore no-explicit-any
-    let current: Record<string, any> = this._openAPI as any;
-
-    for (const segment of path) {
-      if (!current || typeof current !== "object" || !(segment in current)) {
-        return undefined;
-      }
-      current = current[segment];
+    const parts = ref.substring(2).split('/');
+    if (parts.length !== 3) {
+      return undefined;
     }
 
-    return current;
+    // parts[0] should be "components"
+    // parts[1] should be the component type (e.g., "securitySchemes")
+    // parts[2] should be the component name (e.g., "ApiKey")
+    
+    const componentType = parts[1] as keyof OpenAPIComponents;
+    const componentName = parts[2];
+
+    // Check if components exists
+    if (!this._openAPI.components) {
+      return undefined;
+    }
+
+    // Check if the specific component collection exists
+    const collection = this._openAPI.components[componentType];
+    if (!collection) {
+      return undefined;
+    }
+
+    // Return the component from the collection if it exists
+    return (collection as Record<string, unknown>)[componentName];
   }
 }
 
