@@ -18,7 +18,7 @@ import type {
   OpenAPISecurityScheme,
   SecurityRequirement,
 } from "./OpenAPI.types.ts";
-import { stringify } from "jsr:@eemeli/yaml";
+import { stringify } from "jsr:@eemeli/yaml@2.7.1";
 
 class OpenAPI {
   readonly _openAPI: OpenAPIDoc;

@@ -10,5 +10,6 @@
   },
   "imports": {
     "@eemeli/yaml": "jsr:@eemeli/yaml@^2.7.1"
-  }
+  },
+  "license": "MIT"
 }
