@@ -1,13 +1,15 @@
 # OpenAPI Components
 
-Components are a powerful feature in OpenAPI 3.1 that allow you to define reusable objects in your API specification. The Components Object holds various schemas that can be referenced throughout the specification.
+Components are a powerful feature in OpenAPI 3.1 that allow you to define
+reusable objects in your API specification. The Components Object holds various
+schemas that can be referenced throughout the specification.
 
 ## Available Component Types
 
 Yelix OpenAPI supports all component types from the OpenAPI 3.1 specification:
 
 - **Schemas**: Reusable schema definitions
-- **Responses**: Reusable response objects  
+- **Responses**: Reusable response objects
 - **Parameters**: Reusable parameter objects
 - **Examples**: Reusable examples
 - **RequestBodies**: Reusable request body objects
@@ -19,16 +21,17 @@ Yelix OpenAPI supports all component types from the OpenAPI 3.1 specification:
 
 ## Adding Components
 
-All component methods return a reference object that can be used in other parts of your API specification.
+All component methods return a reference object that can be used in other parts
+of your API specification.
 
 ### Adding Schemas
 
 ```typescript
-import { OpenAPI } from "yelix/openapi";
+import { OpenAPI } from "jsr:@murat/openapi";
 
 const openapi = new OpenAPI({
   title: "My API",
-  version: "1.0.0"
+  version: "1.0.0",
 });
 
 // Define a reusable schema
@@ -37,9 +40,9 @@ const userSchemaRef = openapi.addSchema("User", {
   properties: {
     id: { type: "integer" },
     name: { type: "string" },
-    email: { type: "string", format: "email" }
+    email: { type: "string", format: "email" },
   },
-  required: ["id", "name", "email"]
+  required: ["id", "name", "email"],
 });
 
 // Now you can reference this schema in your endpoints
@@ -59,12 +62,12 @@ const errorResponseRef = openapi.addResponse("Error", {
         type: "object",
         properties: {
           code: { type: "integer" },
-          message: { type: "string" }
+          message: { type: "string" },
         },
-        required: ["code", "message"]
-      }
-    }
-  }
+        required: ["code", "message"],
+      },
+    },
+  },
 });
 ```
 
@@ -81,8 +84,8 @@ const limitParamRef = openapi.addParameter("limit", {
     type: "integer",
     minimum: 1,
     maximum: 100,
-    default: 20
-  }
+    default: 20,
+  },
 });
 ```
 
@@ -94,7 +97,7 @@ const apiKeyRef = openapi.addSecurityScheme("ApiKey", {
   type: "apiKey",
   name: "X-API-KEY",
   in: "header",
-  description: "API key authentication"
+  description: "API key authentication",
 });
 
 // Define OAuth2 security scheme
@@ -106,19 +109,20 @@ const oauth2Ref = openapi.addSecurityScheme("OAuth2", {
       tokenUrl: "https://example.com/oauth/token",
       scopes: {
         "read:items": "Read items",
-        "write:items": "Write items"
-      }
-    }
-  }
+        "write:items": "Write items",
+      },
+    },
+  },
 });
 ```
 
 ## Using Components with EndpointBuilder
 
-You can use the returned reference objects directly in your operations with EndpointBuilder:
+You can use the returned reference objects directly in your operations with
+EndpointBuilder:
 
 ```typescript
-import { EndpointBuilder } from "yelix/openapi";
+import { EndpointBuilder } from "jsr:@murat/openapi";
 
 // Create an endpoint builder
 const getUserEndpoint = new EndpointBuilder()
@@ -131,16 +135,16 @@ const getUserEndpoint = new EndpointBuilder()
     in: "path",
     required: true,
     schema: {
-      type: "integer"
-    }
+      type: "integer",
+    },
   })
   .addResponse("200", {
     description: "User found",
     content: {
       "application/json": {
-        schema: userSchemaRef // Using the reference from addSchema
-      }
-    }
+        schema: userSchemaRef, // Using the reference from addSchema
+      },
+    },
   })
   .addResponse("404", errorResponseRef); // Using the reference from addResponse
 
@@ -158,7 +162,12 @@ console.log(userSchema);
 
 ## Best Practices
 
-1. **Use Components for Common Objects**: Define schemas, responses, and parameters that are used in multiple endpoints as components.
-2. **Consistent Naming**: Use a consistent naming convention for your components.
-3. **Schema Reuse**: Break down complex schemas into smaller, reusable components.
+1. **Use Components for Common Objects**: Define schemas, responses, and
+   parameters that are used in multiple endpoints as components.
+2. **Consistent Naming**: Use a consistent naming convention for your
+   components.
+3. **Schema Reuse**: Break down complex schemas into smaller, reusable
+   components.
+
+```
 ```

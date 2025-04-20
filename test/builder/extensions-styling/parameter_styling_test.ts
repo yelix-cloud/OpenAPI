@@ -8,17 +8,17 @@ Deno.test("EndpointBuilder parameter styling functionality", async (t) => {
       method: "get",
       title: "Parameter Style",
     });
-    
+
     endpoint
-      .addQueryParameter("ids", { 
+      .addQueryParameter("ids", {
         type: "array",
-        items: { type: "string" }
+        items: { type: "string" },
       }, "List of IDs")
       .setParameterStyle("ids", "form", true);
-    
+
     const pathItem = endpoint.getEndpoint();
     const param = pathItem.get?.parameters?.[0] as OpenAPIParameter;
-    
+
     assertExists(param, "Parameter should exist");
     assertEquals(param.style, "form", "Parameter style should be form");
     assertEquals(param.explode, true, "Parameter explode should be true");

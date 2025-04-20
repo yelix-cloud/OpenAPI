@@ -1,22 +1,24 @@
-import { EndpointBuilder } from "./EndpointBuilder.ts";
-import { 
-  DescribeValidationType, 
-  OpenAPIDoc, 
-  OpenAPIParams,
-  OpenAPISchema,
-  OpenAPIReference,
-  OpenAPIResponse,
-  OpenAPIParameter,
-  OpenAPIExample,
-  OpenAPIRequestBody,
-  OpenAPIHeader,
-  OpenAPISecurityScheme,
-  OpenAPILink,
+import type { EndpointBuilder } from "./EndpointBuilder.ts";
+import type {
+  DescribeValidationType,
   OpenAPICallback,
+  OpenAPIComponents,
+  OpenAPIDoc,
+  OpenAPIExample,
+  OpenAPIHeader,
+  OpenAPILink,
+  OpenAPIOAuthFlows,
+  OpenAPIParameter,
+  OpenAPIParams,
   OpenAPIPathItem,
-  OpenAPIComponents
-} from './OpenAPI.types.ts';
-import { stringify } from 'jsr:@eemeli/yaml';
+  OpenAPIReference,
+  OpenAPIRequestBody,
+  OpenAPIResponse,
+  OpenAPISchema,
+  OpenAPISecurityScheme,
+  SecurityRequirement,
+} from "./OpenAPI.types.ts";
+import { stringify } from "jsr:@eemeli/yaml";
 
 class OpenAPI {
   readonly _openAPI: OpenAPIDoc;
@@ -24,15 +26,15 @@ class OpenAPI {
 
   constructor(config: OpenAPIParams) {
     this._openAPI = {
-      openapi: '3.1.0',
+      openapi: "3.1.0",
       info: {
         title: config.title,
         version: config.version,
-        description: config.description || 'OpenAPI API Documentation',
+        description: config.description || "OpenAPI API Documentation",
       },
       paths: {},
       servers: config.servers || [],
-      components: {} // Initialize empty components object
+      components: {}, // Initialize empty components object
     };
   }
 
@@ -59,11 +61,13 @@ class OpenAPI {
     return isOverriding;
   }
 
-  getValidationRuleDescription(kind: string): DescribeValidationType | undefined {
+  getValidationRuleDescription(
+    kind: string,
+  ): DescribeValidationType | undefined {
     return this.describeValidation[kind];
   }
 
-  addNewEndpoint_(path: string, endpoint: EndpointBuilder) {
+  addNewEndpoint_(path: string, endpoint: EndpointBuilder): this {
     const json = endpoint.getEndpoint();
     this._openAPI.paths![path] = json;
     return this;
@@ -82,7 +86,7 @@ class OpenAPI {
 
   /**
    * Adds a schema to the components section
-   * 
+   *
    * @param name - The name to use for this schema
    * @param schema - The schema definition
    * @returns The reference object that can be used in other parts of the API
@@ -98,7 +102,7 @@ class OpenAPI {
 
   /**
    * Adds a response to the components section
-   * 
+   *
    * @param name - The name to use for this response
    * @param response - The response definition
    * @returns The reference object that can be used in other parts of the API
@@ -114,7 +118,7 @@ class OpenAPI {
 
   /**
    * Adds a parameter to the components section
-   * 
+   *
    * @param name - The name to use for this parameter
    * @param parameter - The parameter definition
    * @returns The reference object that can be used in other parts of the API
@@ -130,7 +134,7 @@ class OpenAPI {
 
   /**
    * Adds an example to the components section
-   * 
+   *
    * @param name - The name to use for this example
    * @param example - The example definition
    * @returns The reference object that can be used in other parts of the API
@@ -146,12 +150,15 @@ class OpenAPI {
 
   /**
    * Adds a request body to the components section
-   * 
+   *
    * @param name - The name to use for this request body
    * @param requestBody - The request body definition
    * @returns The reference object that can be used in other parts of the API
    */
-  addRequestBody(name: string, requestBody: OpenAPIRequestBody): OpenAPIReference {
+  addRequestBody(
+    name: string,
+    requestBody: OpenAPIRequestBody,
+  ): OpenAPIReference {
     const components = this.ensureComponents();
     if (!components.requestBodies) {
       components.requestBodies = {};
@@ -163,7 +170,7 @@ class OpenAPI {
 
   /**
    * Adds a header to the components section
-   * 
+   *
    * @param name - The name to use for this header
    * @param header - The header definition
    * @returns The reference object that can be used in other parts of the API
@@ -179,12 +186,15 @@ class OpenAPI {
 
   /**
    * Adds a security scheme to the components section
-   * 
+   *
    * @param name - The name to use for this security scheme
    * @param securityScheme - The security scheme definition
    * @returns The reference object that can be used in other parts of the API
    */
-  addSecurityScheme(name: string, securityScheme: OpenAPISecurityScheme): OpenAPIReference {
+  addSecurityScheme(
+    name: string,
+    securityScheme: OpenAPISecurityScheme,
+  ): OpenAPIReference {
     const components = this.ensureComponents();
     if (!components.securitySchemes) {
       components.securitySchemes = {};
@@ -195,7 +205,7 @@ class OpenAPI {
 
   /**
    * Adds a link to the components section
-   * 
+   *
    * @param name - The name to use for this link
    * @param link - The link definition
    * @returns The reference object that can be used in other parts of the API
@@ -211,7 +221,7 @@ class OpenAPI {
 
   /**
    * Adds a callback to the components section
-   * 
+   *
    * @param name - The name to use for this callback
    * @param callback - The callback definition
    * @returns The reference object that can be used in other parts of the API
@@ -227,7 +237,7 @@ class OpenAPI {
 
   /**
    * Adds a path item to the components section
-   * 
+   *
    * @param name - The name to use for this path item
    * @param pathItem - The path item definition
    * @returns The reference object that can be used in other parts of the API
@@ -242,27 +252,166 @@ class OpenAPI {
   }
 
   /**
+   * Adds a global security requirement to the API.
+   * This defines the security requirement that applies to all operations.
+   *
+   * @param securityRequirement - The security requirement to add
+   * @returns this OpenAPI instance for chaining
+   */
+  addGlobalSecurity(securityRequirement: SecurityRequirement): this {
+    if (!this._openAPI.security) {
+      this._openAPI.security = [];
+    }
+    this._openAPI.security.push(securityRequirement);
+    return this;
+  }
+
+  /**
+   * Sets the global security requirements for the API.
+   * This replaces any existing security requirements.
+   *
+   * @param securityRequirements - Array of security requirements
+   * @returns this OpenAPI instance for chaining
+   */
+  setGlobalSecurity(securityRequirements: SecurityRequirement[]): this {
+    this._openAPI.security = securityRequirements;
+    return this;
+  }
+
+  /**
+   * Adds an API Key security scheme
+   *
+   * @param name - The name to use for this security scheme
+   * @param options - Configuration options for the API Key
+   * @returns The reference object that can be used in other parts of the API
+   */
+  addApiKeySecurity(name: string, options: {
+    in: "query" | "header" | "cookie";
+    parameterName: string;
+    description?: string;
+  }): OpenAPIReference {
+    return this.addSecurityScheme(name, {
+      type: "apiKey",
+      in: options.in,
+      name: options.parameterName,
+      description: options.description,
+    });
+  }
+
+  /**
+   * Adds HTTP authentication security scheme
+   *
+   * @param name - The name to use for this security scheme
+   * @param scheme - The HTTP authentication scheme (e.g., 'basic', 'bearer', 'digest')
+   * @param options - Additional options like bearerFormat and description
+   * @returns The reference object that can be used in other parts of the API
+   */
+  addHttpSecurity(name: string, scheme: string, options?: {
+    bearerFormat?: string;
+    description?: string;
+  }): OpenAPIReference {
+    return this.addSecurityScheme(name, {
+      type: "http",
+      scheme: scheme,
+      bearerFormat: options?.bearerFormat,
+      description: options?.description,
+    });
+  }
+
+  /**
+   * Adds OAuth2 security scheme
+   *
+   * @param name - The name to use for this security scheme
+   * @param flows - The OAuth2 flows configuration
+   * @param description - Optional description for this security scheme
+   * @returns The reference object that can be used in other parts of the API
+   */
+  addOAuth2Security(
+    name: string,
+    flows: OpenAPIOAuthFlows,
+    description?: string,
+  ): OpenAPIReference {
+    return this.addSecurityScheme(name, {
+      type: "oauth2",
+      flows,
+      description,
+    });
+  }
+
+  /**
+   * Adds OpenID Connect security scheme
+   *
+   * @param name - The name to use for this security scheme
+   * @param openIdConnectUrl - OpenId Connect URL to discover OAuth2 configuration values
+   * @param description - Optional description for this security scheme
+   * @returns The reference object that can be used in other parts of the API
+   */
+  addOpenIdConnectSecurity(
+    name: string,
+    openIdConnectUrl: string,
+    description?: string,
+  ): OpenAPIReference {
+    return this.addSecurityScheme(name, {
+      type: "openIdConnect",
+      openIdConnectUrl,
+      description,
+    });
+  }
+
+  /**
+   * Adds Mutual TLS security scheme
+   *
+   * @param name - The name to use for this security scheme
+   * @param description - Optional description for this security scheme
+   * @returns The reference object that can be used in other parts of the API
+   */
+  addMutualTlsSecurity(name: string, description?: string): OpenAPIReference {
+    return this.addSecurityScheme(name, {
+      type: "mutualTLS",
+      description,
+    });
+  }
+
+  /**
+   * Creates a security requirement object that can be used with addGlobalSecurity
+   * or with specific operations
+   *
+   * @param schemeName - The name of the security scheme
+   * @param scopes - Optional array of scopes (required for OAuth2)
+   * @returns A security requirement object
+   */
+  createSecurityRequirement(
+    schemeName: string,
+    scopes: string[] = [],
+  ): SecurityRequirement {
+    const requirement: SecurityRequirement = {};
+    requirement[schemeName] = scopes;
+    return requirement;
+  }
+
+  /**
    * Gets a component by its reference string
    * Example: getComponentByRef('#/components/schemas/User')
-   * 
+   *
    * @param ref - The reference string
    * @returns The component or undefined if not found
    */
   getComponentByRef(ref: string): unknown {
-    if (!ref.startsWith('#/components/')) {
+    if (!ref.startsWith("#/components/")) {
       return undefined;
     }
 
-    const path = ref.substring(1).split('/');
-    let current: any = this._openAPI;
-    
+    const path = ref.substring(1).split("/");
+    // deno-lint-ignore no-explicit-any
+    let current: Record<string, any> = this._openAPI as any;
+
     for (const segment of path) {
-      if (!current[segment]) {
+      if (!current || typeof current !== "object" || !(segment in current)) {
         return undefined;
       }
       current = current[segment];
     }
-    
+
     return current;
   }
 }

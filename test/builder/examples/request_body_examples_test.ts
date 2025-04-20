@@ -8,58 +8,66 @@ Deno.test("EndpointBuilder request body examples", async (t) => {
       method: "post",
       title: "Request Body Example",
     });
-    
+
     const example = { name: "Test User", email: "test@example.com" };
-    
+
     endpoint
       .setRequestBody({
         schema: {
           type: "object",
           properties: {
             name: { type: "string" },
-            email: { type: "string", format: "email" }
-          }
-        }
+            email: { type: "string", format: "email" },
+          },
+        },
       })
       .setRequestBodyExample(example);
-    
+
     const pathItem = endpoint.getEndpoint();
     const mediaType = pathItem.post?.requestBody?.content?.["application/json"];
-    
+
     assertExists(mediaType, "Media type should exist");
-    assertEquals(mediaType.example, example, "Request body example should be set");
+    assertEquals(
+      mediaType.example,
+      example,
+      "Request body example should be set",
+    );
   });
-  
+
   await t.step("should add request body named example", () => {
     const endpoint = new EndpointBuilder({
       method: "post",
       title: "Named Request Body Example",
     });
-    
+
     const example = { name: "John Doe", role: "admin" };
-    
+
     endpoint
       .setRequestBody({
         schema: {
           type: "object",
           properties: {
             name: { type: "string" },
-            role: { type: "string" }
-          }
-        }
+            role: { type: "string" },
+          },
+        },
       })
       .addRequestBodyNamedExample("adminUser", {
         value: example,
         summary: "Admin User",
-        description: "Example of an admin user payload"
+        description: "Example of an admin user payload",
       });
-    
+
     const pathItem = endpoint.getEndpoint();
     const mediaType = pathItem.post?.requestBody?.content?.["application/json"];
-    
+
     assertExists(mediaType, "Media type should exist");
     assertExists(mediaType.examples, "Examples should exist");
     assertExists(mediaType.examples?.adminUser, "Named example should exist");
-    assertEquals((mediaType.examples?.adminUser as OpenAPIExample).value, example, "Example value should match");
+    assertEquals(
+      (mediaType.examples?.adminUser as OpenAPIExample).value,
+      example,
+      "Example value should match",
+    );
   });
 });

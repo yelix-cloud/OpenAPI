@@ -7,23 +7,26 @@ Deno.test("EndpointBuilder callbacks functionality", async (t) => {
       method: "post",
       title: "Webhook Registration",
     });
-    
+
     const callbackPathItem = new EndpointBuilder({
       method: "post",
-      title: "Webhook Callback"
+      title: "Webhook Callback",
     })
       .addJsonResponse(200, "Success", { type: "object" })
       .getEndpoint();
-    
+
     endpoint.addCallback(
       "paymentCallback",
       "{$request.body#/callbackUrl}",
-      callbackPathItem
+      callbackPathItem,
     );
-    
+
     const pathItem = endpoint.getEndpoint();
-    
+
     assertExists(pathItem.post?.callbacks, "Callbacks should exist");
-    assertExists(pathItem.post?.callbacks?.paymentCallback, "Payment callback should exist");
+    assertExists(
+      pathItem.post?.callbacks?.paymentCallback,
+      "Payment callback should exist",
+    );
   });
 });

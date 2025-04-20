@@ -1,13 +1,14 @@
 # OpenAPI Examples
 
-This document provides complete examples of using the OpenAPI library for different API scenarios.
+This document provides complete examples of using the OpenAPI library for
+different API scenarios.
 
 ## Basic REST API
 
 Here's a complete example of a simple REST API for a todo application:
 
 ```typescript
-import { OpenAPI, EndpointBuilder } from "@murat/openapi";
+import { EndpointBuilder, OpenAPI } from "@murat/openapi";
 
 // Create the OpenAPI document
 const api = new OpenAPI({
@@ -49,17 +50,17 @@ const listTodosEndpoint = new EndpointBuilder({
   .addQueryParameter(
     "status",
     { type: "string", enum: ["all", "completed", "active"], default: "all" },
-    "Filter by completion status"
+    "Filter by completion status",
   )
   .addQueryParameter(
     "limit",
     { type: "integer", minimum: 1, maximum: 100, default: 20 },
-    "Maximum number of todos to return"
+    "Maximum number of todos to return",
   )
   .addQueryParameter(
     "offset",
     { type: "integer", minimum: 0, default: 0 },
-    "Number of todos to skip"
+    "Number of todos to skip",
   )
   .addJsonResponse(200, "A list of todos", {
     type: "object",
@@ -193,10 +194,11 @@ console.log(jsonString);
 
 ## Authentication API Example
 
-Here's an example of an authentication API with login, registration, and password reset:
+Here's an example of an authentication API with login, registration, and
+password reset:
 
 ```typescript
-import { OpenAPI, EndpointBuilder } from "@murat/openapi";
+import { EndpointBuilder, OpenAPI } from "@murat/openapi";
 
 const api = new OpenAPI({
   title: "Auth API",
@@ -393,10 +395,10 @@ const logoutEndpoint = new EndpointBuilder({
   .setOperationId("logoutUser")
   .addTag("auth")
   .addHeaderParameter(
-    "Authorization", 
-    { type: "string" }, 
+    "Authorization",
+    { type: "string" },
     "Bearer token",
-    true
+    true,
   )
   .addResponse(204, {
     description: "Logout successful",
@@ -411,12 +413,219 @@ api.addNewEndpoint_("/auth/reset-password", resetPasswordEndpoint);
 api.addNewEndpoint_("/auth/logout", logoutEndpoint);
 ```
 
+## Authentication API with Security Schemes
+
+Here's an example of an authentication API with security schemes properly
+defined:
+
+```typescript
+import { EndpointBuilder, OpenAPI } from "@murat/openapi";
+
+const api = new OpenAPI({
+  title: "Auth API",
+  version: "1.0.0",
+  description: "Authentication and user management API",
+  servers: [{ url: "https://auth.example.com/v1" }],
+});
+
+// Define security schemes
+const jwtAuth = api.addHttpSecurity("JWT", "bearer", {
+  bearerFormat: "JWT",
+  description: "JWT Bearer Token Authentication",
+});
+
+const apiKeyAuth = api.addApiKeySecurity("ApiKey", {
+  in: "header",
+  parameterName: "X-API-Key",
+  description: "API Key Authentication",
+});
+
+// Define an OAuth2 scheme
+const oauth2Auth = api.addOAuth2Security("OAuth2", {
+  authorizationCode: {
+    authorizationUrl: "https://auth.example.com/oauth/authorize",
+    tokenUrl: "https://auth.example.com/oauth/token",
+    refreshUrl: "https://auth.example.com/oauth/refresh",
+    scopes: {
+      "user:read": "Read user information",
+      "user:write": "Modify user information",
+      "admin": "Administrative access",
+    },
+  },
+}, "OAuth 2.0 Authentication");
+
+// Set global security - require one of the following:
+api.setGlobalSecurity([
+  api.createSecurityRequirement("JWT"),
+  api.createSecurityRequirement("ApiKey"),
+  api.createSecurityRequirement("OAuth2", ["user:read"]),
+]);
+
+// POST /auth/register - User registration (public endpoint)
+const registerEndpoint = new EndpointBuilder({
+  method: "post",
+  title: "Register User",
+})
+  .setDescription("Register a new user account")
+  .setOperationId("registerUser")
+  .addTags(["auth", "public"])
+  .setSecurity([]) // Public endpoint - no security required
+  .setRequestBody({
+    contentType: "application/json",
+    required: true,
+    schema: {
+      type: "object",
+      properties: {
+        email: { type: "string", format: "email" },
+        password: { type: "string", format: "password", minLength: 8 },
+        firstName: { type: "string" },
+        lastName: { type: "string" },
+      },
+      required: ["email", "password"],
+    },
+  })
+  .addJsonResponse(201, "User registered successfully", {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      email: { type: "string" },
+    },
+  });
+
+// POST /auth/login - User login (public endpoint)
+const loginEndpoint = new EndpointBuilder({
+  method: "post",
+  title: "Login",
+})
+  .setDescription("Authenticate a user and get a token")
+  .setOperationId("loginUser")
+  .addTags(["auth", "public"])
+  .setSecurity([]) // Public endpoint - no security required
+  .setRequestBody({
+    contentType: "application/json",
+    required: true,
+    schema: {
+      type: "object",
+      properties: {
+        email: { type: "string", format: "email" },
+        password: { type: "string", format: "password" },
+      },
+      required: ["email", "password"],
+    },
+  })
+  .addJsonResponse(200, "Login successful", {
+    type: "object",
+    properties: {
+      token: { type: "string" },
+      refreshToken: { type: "string" },
+      expiresIn: { type: "integer" },
+    },
+  });
+
+// GET /users/me - Get current user (protected endpoint)
+const getCurrentUserEndpoint = new EndpointBuilder({
+  method: "get",
+  title: "Get Current User",
+})
+  .setDescription("Get the currently authenticated user's data")
+  .setOperationId("getCurrentUser")
+  .addTag("users")
+  .setSecurity([
+    // This endpoint specifically requires OAuth2 with user:read scope
+    api.createSecurityRequirement("OAuth2", ["user:read"]),
+  ])
+  .addJsonResponse(200, "User data retrieved successfully", {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      email: { type: "string" },
+      firstName: { type: "string" },
+      lastName: { type: "string" },
+      createdAt: { type: "string", format: "date-time" },
+    },
+  });
+
+// PATCH /users/me - Update current user (protected endpoint with higher privileges)
+const updateCurrentUserEndpoint = new EndpointBuilder({
+  method: "patch",
+  title: "Update Current User",
+})
+  .setDescription("Update the currently authenticated user's data")
+  .setOperationId("updateCurrentUser")
+  .addTag("users")
+  .setSecurity([
+    // This endpoint requires OAuth2 with user:write scope
+    api.createSecurityRequirement("OAuth2", ["user:write"]),
+  ])
+  .setRequestBody({
+    contentType: "application/json",
+    required: true,
+    schema: {
+      type: "object",
+      properties: {
+        firstName: { type: "string" },
+        lastName: { type: "string" },
+        email: { type: "string", format: "email" },
+      },
+    },
+  })
+  .addJsonResponse(200, "User updated successfully", {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      email: { type: "string" },
+      firstName: { type: "string" },
+      lastName: { type: "string" },
+      updatedAt: { type: "string", format: "date-time" },
+    },
+  });
+
+// GET /admin/users - List all users (admin endpoint)
+const listUsersEndpoint = new EndpointBuilder({
+  method: "get",
+  title: "List All Users",
+})
+  .setDescription("Get a list of all users (admin only)")
+  .setOperationId("listUsers")
+  .addTag("admin")
+  .setSecurity([
+    // This endpoint requires OAuth2 with admin scope
+    api.createSecurityRequirement("OAuth2", ["admin"]),
+  ])
+  .addJsonResponse(200, "List of users", {
+    type: "object",
+    properties: {
+      users: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            email: { type: "string" },
+            firstName: { type: "string" },
+            lastName: { type: "string" },
+            createdAt: { type: "string", format: "date-time" },
+          },
+        },
+      },
+      total: { type: "integer" },
+    },
+  });
+
+// Add endpoints to the API
+api.addNewEndpoint_("/auth/register", registerEndpoint);
+api.addNewEndpoint_("/auth/login", loginEndpoint);
+api.addNewEndpoint_("/users/me", getCurrentUserEndpoint);
+api.addNewEndpoint_("/users/me", updateCurrentUserEndpoint);
+api.addNewEndpoint_("/admin/users", listUsersEndpoint);
+```
+
 ## File Upload API Example
 
 Here's an example of endpoints for file uploads:
 
 ```typescript
-import { OpenAPI, EndpointBuilder } from "@murat/openapi";
+import { EndpointBuilder, OpenAPI } from "@murat/openapi";
 
 const api = new OpenAPI({
   title: "File Storage API",
@@ -488,24 +697,24 @@ const listFilesEndpoint = new EndpointBuilder({
   .setOperationId("listFiles")
   .addTag("files")
   .addQueryParameter(
-    "folder", 
-    { type: "string" }, 
-    "Filter files by folder"
+    "folder",
+    { type: "string" },
+    "Filter files by folder",
   )
   .addQueryParameter(
-    "type", 
-    { type: "string", enum: ["image", "document", "video", "audio", "other"] }, 
-    "Filter files by type"
+    "type",
+    { type: "string", enum: ["image", "document", "video", "audio", "other"] },
+    "Filter files by type",
   )
   .addQueryParameter(
-    "limit", 
-    { type: "integer", minimum: 1, maximum: 100, default: 20 }, 
-    "Maximum number of files to return"
+    "limit",
+    { type: "integer", minimum: 1, maximum: 100, default: 20 },
+    "Maximum number of files to return",
   )
   .addQueryParameter(
-    "offset", 
-    { type: "integer", minimum: 0, default: 0 }, 
-    "Number of files to skip"
+    "offset",
+    { type: "integer", minimum: 0, default: 0 },
+    "Number of files to skip",
   )
   .addJsonResponse(200, "List of files", {
     type: "object",
@@ -588,7 +797,7 @@ api.addNewEndpoint_("/files/{id}", deleteFileEndpoint);
 Here's how to use validation rule descriptions in your API:
 
 ```typescript
-import { OpenAPI, EndpointBuilder } from "@murat/openapi";
+import { EndpointBuilder, OpenAPI } from "@murat/openapi";
 
 const api = new OpenAPI({
   title: "Validation API",
@@ -596,9 +805,18 @@ const api = new OpenAPI({
 });
 
 // Define validation rule descriptions
-api.describeValidationRule("minLength", (value) => `Must be at least ${value} characters long`);
-api.describeValidationRule("maxLength", (value) => `Cannot exceed ${value} characters`);
-api.describeValidationRule("pattern", (value) => `Must match pattern: ${value}`);
+api.describeValidationRule(
+  "minLength",
+  (value) => `Must be at least ${value} characters long`,
+);
+api.describeValidationRule(
+  "maxLength",
+  (value) => `Cannot exceed ${value} characters`,
+);
+api.describeValidationRule(
+  "pattern",
+  (value) => `Must match pattern: ${value}`,
+);
 api.describeValidationRule("minimum", (value) => `Must be at least ${value}`);
 api.describeValidationRule("maximum", (value) => `Cannot exceed ${value}`);
 api.describeValidationRule("email", () => "Must be a valid email address");
@@ -610,7 +828,7 @@ api.describeValidationRule("required", () => "This field is required");
 ## Exporting Documentation to Files
 
 ```typescript
-import { OpenAPI, EndpointBuilder } from "@murat/openapi";
+import { EndpointBuilder, OpenAPI } from "@murat/openapi";
 import { writeFile } from "fs/promises";
 import { join } from "path";
 
@@ -620,21 +838,22 @@ async function generateApiDocs() {
     version: "1.0.0",
     description: "API Description",
   });
-  
+
   // Add endpoints here...
-  
+
   // Export documentation
   const jsonString = api.getJSONString();
   const yamlString = api.getYAMLString();
-  
+
   // Save files
   await writeFile(join(process.cwd(), "public", "openapi.json"), jsonString);
   await writeFile(join(process.cwd(), "public", "openapi.yaml"), yamlString);
-  
+
   console.log("API documentation generated successfully!");
 }
 
 generateApiDocs().catch(console.error);
 ```
 
-These examples demonstrate various common API patterns and how to implement them using the OpenAPI library.
+These examples demonstrate various common API patterns and how to implement them
+using the OpenAPI library.

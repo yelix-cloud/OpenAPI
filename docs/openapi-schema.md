@@ -1,19 +1,20 @@
 # OpenAPI Schema Documentation
 
-This guide explains how to define and use schemas in the OpenAPI library, which are used to describe the structure of request and response data.
+This guide explains how to define and use schemas in the OpenAPI library, which
+are used to describe the structure of request and response data.
 
 ## Basic Schema Types
 
 OpenAPI supports the following basic data types:
 
-| Type      | Description                          | Example                              |
-|-----------|--------------------------------------|--------------------------------------|
-| `string`  | String values                        | `{ type: "string" }`                 |
-| `number`  | Floating point numbers               | `{ type: "number" }`                 |
-| `integer` | Whole numbers                        | `{ type: "integer" }`                |
-| `boolean` | True/false values                    | `{ type: "boolean" }`                |
-| `array`   | Ordered list of values               | `{ type: "array", items: {...} }`    |
-| `object`  | Unordered set of name/value pairs    | `{ type: "object", properties: {...} }` |
+| Type      | Description                       | Example                                 |
+| --------- | --------------------------------- | --------------------------------------- |
+| `string`  | String values                     | `{ type: "string" }`                    |
+| `number`  | Floating point numbers            | `{ type: "number" }`                    |
+| `integer` | Whole numbers                     | `{ type: "integer" }`                   |
+| `boolean` | True/false values                 | `{ type: "boolean" }`                   |
+| `array`   | Ordered list of values            | `{ type: "array", items: {...} }`       |
+| `object`  | Unordered set of name/value pairs | `{ type: "object", properties: {...} }` |
 
 ## String Format
 
@@ -304,8 +305,8 @@ endpoint.setRequestBody({
     type: "object",
     properties: {
       // Your schema properties here
-    }
-  }
+    },
+  },
 });
 ```
 
@@ -316,7 +317,7 @@ endpoint.addJsonResponse(200, "Success", {
   type: "object",
   properties: {
     // Your schema properties here
-  }
+  },
 });
 ```
 
@@ -328,9 +329,9 @@ endpoint.addQueryParameter(
   {
     type: "string",
     enum: ["all", "active", "completed"],
-    default: "all"
+    default: "all",
   },
-  "Filter results by status"
+  "Filter results by status",
 );
 ```
 

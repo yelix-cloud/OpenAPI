@@ -7,25 +7,25 @@ Deno.test("EndpointBuilder extensions functionality", async (t) => {
       method: "get",
       title: "Extension Test",
     });
-    
+
     endpoint.addExtension("x-rate-limit", 100);
-    
+
     const pathItem = endpoint.getEndpoint();
     const operation = pathItem.get as Record<string, unknown>;
-    
+
     assertEquals(operation["x-rate-limit"], 100, "Extension should be set");
   });
-  
+
   await t.step("should throw error for invalid extension name", () => {
     const endpoint = new EndpointBuilder({
       method: "get",
       title: "Invalid Extension",
     });
-    
+
     assertThrows(
       () => endpoint.addExtension("invalid-extension", "value"),
       Error,
-      "Extension name must start with x-"
+      "Extension name must start with x-",
     );
   });
 });

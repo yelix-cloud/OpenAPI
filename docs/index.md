@@ -1,11 +1,14 @@
 # Yelix OpenAPI Documentation
 
-Yelix OpenAPI is a TypeScript-first library for generating OpenAPI 3.1 documentation for your API. It provides a simple and intuitive way to define your API endpoints, schemas, responses, and more.
+Yelix OpenAPI is a TypeScript-first library for generating OpenAPI 3.1
+documentation for your API. It provides a simple and intuitive way to define
+your API endpoints, schemas, responses, and more.
 
 ## Features
 
 - 🚀 **TypeScript-first**: Full type safety and autocomplete support
-- 📚 **OpenAPI 3.1 compatible**: Generate OpenAPI documentation that follows the latest specification
+- 📚 **OpenAPI 3.1 compatible**: Generate OpenAPI documentation that follows the
+  latest specification
 - 🧩 **Components**: Define reusable schemas, responses, parameters, and more
 - 📄 **JSON & YAML output**: Export your documentation in both formats
 - 🔄 **Validation**: Associate validation rules with your API documentation
@@ -21,7 +24,7 @@ Yelix OpenAPI is a TypeScript-first library for generating OpenAPI 3.1 documenta
 Here's a simple example of how to use Yelix OpenAPI:
 
 ```typescript
-import { OpenAPI, EndpointBuilder } from "yelix/openapi";
+import { EndpointBuilder, OpenAPI } from "jsr:@murat/openapi";
 
 // Create OpenAPI document
 const openapi = new OpenAPI({
@@ -31,9 +34,9 @@ const openapi = new OpenAPI({
   servers: [
     {
       url: "https://petstore.example.com/v1",
-      description: "Production server"
-    }
-  ]
+      description: "Production server",
+    },
+  ],
 });
 
 // Define a reusable schema
@@ -42,12 +45,12 @@ const petSchemaRef = openapi.addSchema("Pet", {
   properties: {
     id: { type: "integer" },
     name: { type: "string" },
-    status: { 
+    status: {
       type: "string",
-      enum: ["available", "pending", "sold"]
-    }
+      enum: ["available", "pending", "sold"],
+    },
   },
-  required: ["name"]
+  required: ["name"],
 });
 
 // Create an endpoint
@@ -61,10 +64,10 @@ const getPetsEndpoint = new EndpointBuilder()
       "application/json": {
         schema: {
           type: "array",
-          items: petSchemaRef
-        }
-      }
-    }
+          items: petSchemaRef,
+        },
+      },
+    },
   });
 
 // Add the endpoint to the OpenAPI document
@@ -77,4 +80,6 @@ console.log(yaml);
 
 ## Advanced Usage
 
-Check out the [Getting Started](./getting-started.md) guide for more detailed examples and the [Components](./components.md) documentation to learn how to use reusable components effectively.
+Check out the [Getting Started](./getting-started.md) guide for more detailed
+examples and the [Components](./components.md) documentation to learn how to use
+reusable components effectively.

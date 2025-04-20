@@ -6,10 +6,10 @@ Deno.test("OpenAPI JSON string serialization", () => {
     title: "JSON Test API",
     version: "1.0.0",
   });
-  
+
   const jsonString = api.getJSONString();
   const parsed = JSON.parse(jsonString);
-  
+
   assertEquals(parsed.openapi, "3.1.0");
   assertEquals(parsed.info.title, "JSON Test API");
 });

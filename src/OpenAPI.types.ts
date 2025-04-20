@@ -1,4 +1,4 @@
-import { AllowedLicenses } from "./Licenses.types.ts";
+import type { AllowedLicenses } from "./Licenses.types.ts";
 
 type OpenAPIMethods = "POST" | "GET" | "PUT" | "DELETE" | "PATCH" | "OPTIONS";
 
@@ -31,7 +31,7 @@ type OpenAPIDoc = {
   paths?: Record<string, OpenAPIPathItem | OpenAPIReference>;
   webhooks?: Record<string, OpenAPIPathItem | OpenAPIReference>;
   components?: OpenAPIComponents;
-  security?: SecurityRequirement;
+  security?: SecurityRequirement[]; // Changed from SecurityRequirement to SecurityRequirement[]
   tags?: OpenAPITag[];
   externalDocs?: OpenAPIExternalDocs;
 };
@@ -558,7 +558,7 @@ type OpenAPIDefaultSchema = {
   items?: OpenAPIDefaultSchema; // Add items property for arrays
   properties?: Record<string, OpenAPISchema | OpenAPIDefaultSchema>;
   required?: string[];
-  minimum?: number;  // Add this property for number/integer types
+  minimum?: number; // Add this property for number/integer types
   maximum?: number;
   minLength?: number;
   maxLength?: number;
@@ -601,10 +601,10 @@ type OpenAPIRequestBody = {
  * @property {string} [openIdConnectUrl] - Required for openIdConnect. OpenId Connect URL to discover OAuth2 configuration values. Must be a valid HTTPS URL.
  */
 type OpenAPISecurityScheme = {
-  type: string;
+  type: "apiKey" | "http" | "mutualTLS" | "oauth2" | "openIdConnect";
   description?: string;
   name?: string;
-  in?: string;
+  in?: "query" | "header" | "cookie";
   scheme?: string;
   bearerFormat?: string;
   flows?: OpenAPIOAuthFlows;
@@ -710,7 +710,7 @@ type OpenAPIPathItem = {
 
 /**
  * Represents an OpenAPI Operation Object that describes a single API operation on a path.
- * 
+ *
  * @property {string[]} [tags] - Tags for API documentation control. Used for logical grouping of operations.
  * @property {string} [summary] - Short summary of the operation's functionality.
  * @property {string} [description] - Detailed explanation of operation behavior. Supports CommonMark syntax.
@@ -758,7 +758,6 @@ type OpenAPIYelixDoc = {
   method: string;
 } & OpenAPIDoc;
 
-
 type InitializeOpenAPIParams = {
   title: string;
   version: string;
@@ -799,21 +798,25 @@ type NewEndpointInformation = {
   method: LowercasedOpenAPIMethods;
   title?: string;
   description?: string;
-}
+};
 
 export type {
   AddOpenAPIEndpointResponseParams,
+  DescribeValidationType,
   InitializeOpenAPIParams,
+  LowercasedOpenAPIMethods,
+  NewEndpointInformation,
   NewEndpointParams,
-  OpenAPIDoc,
   OpenAPICallback,
   OpenAPIComponents,
   OpenAPIContact,
   OpenAPIDataTypes,
   OpenAPIDefaultSchema,
   OpenAPIDiscriminator,
+  OpenAPIDoc,
   OpenAPIEncoding,
   OpenAPIExample,
+  OpenAPIExampleMap,
   OpenAPIExtenedRequestBodySchema,
   OpenAPIExternalDocs,
   OpenAPIHeader,
@@ -844,8 +847,4 @@ export type {
   RuntimeExpression,
   RuntimeExpressionOrValue,
   SecurityRequirement,
-  DescribeValidationType,
-  NewEndpointInformation,
-  LowercasedOpenAPIMethods,
-  OpenAPIExampleMap
 };

@@ -7,10 +7,10 @@ Deno.test("OpenAPI YAML string serialization", () => {
     title: "YAML Test API",
     version: "1.0.0",
   });
-  
+
   const yamlString = api.getYAMLString();
   const parsed = parseYAML(yamlString);
-  
+
   // More precise YAML validation using the parsed object
   assertEquals(parsed.openapi, "3.1.0");
   assertEquals(parsed.info.title, "YAML Test API");

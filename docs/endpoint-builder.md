@@ -1,6 +1,8 @@
 # EndpointBuilder API Documentation
 
-The `EndpointBuilder` is a powerful class for creating OpenAPI endpoint definitions with a fluent API. It allows you to define all aspects of an API endpoint including parameters, request bodies, responses, and more.
+The `EndpointBuilder` is a powerful class for creating OpenAPI endpoint
+definitions with a fluent API. It allows you to define all aspects of an API
+endpoint including parameters, request bodies, responses, and more.
 
 ## Creating an Endpoint
 
@@ -37,7 +39,9 @@ Set metadata for your endpoint:
 endpoint.setOperationId("getUserById");
 
 // Set a detailed description
-endpoint.setDescription("Retrieves detailed user information by their unique identifier");
+endpoint.setDescription(
+  "Retrieves detailed user information by their unique identifier",
+);
 
 // Set a brief summary
 endpoint.setSummary("Get user by ID");
@@ -48,19 +52,19 @@ endpoint.setDeprecated(true);
 // Add external documentation
 endpoint.setExternalDocs(
   "https://example.com/docs/users",
-  "Additional documentation for the user API"
+  "Additional documentation for the user API",
 );
 
 // Specify servers for this endpoint
 endpoint.setServers([
-  { 
-    url: "https://api.example.com/v1", 
-    description: "Production"
+  {
+    url: "https://api.example.com/v1",
+    description: "Production",
   },
-  { 
-    url: "https://api-staging.example.com/v1", 
-    description: "Staging"
-  }
+  {
+    url: "https://api-staging.example.com/v1",
+    description: "Staging",
+  },
 ]);
 ```
 
@@ -74,7 +78,7 @@ Add parameters to your endpoint:
 endpoint.addPathParameter(
   "userId", // Parameter name
   { type: "string" }, // Schema
-  "The user's unique identifier" // Description
+  "The user's unique identifier", // Description
 );
 ```
 
@@ -85,7 +89,7 @@ endpoint.addQueryParameter(
   "includeDeleted", // Parameter name
   { type: "boolean" }, // Schema
   "Include soft-deleted users in the result", // Description
-  false // Required (default: false)
+  false, // Required (default: false)
 );
 ```
 
@@ -96,7 +100,7 @@ endpoint.addHeaderParameter(
   "X-API-Version", // Header name
   { type: "string" }, // Schema
   "API version override", // Description
-  false // Required (default: false)
+  false, // Required (default: false)
 );
 ```
 
@@ -107,7 +111,7 @@ endpoint.addCookieParameter(
   "session", // Cookie name
   { type: "string" }, // Schema
   "Session identifier", // Description
-  true // Required
+  true, // Required
 );
 ```
 
@@ -125,9 +129,9 @@ endpoint.addParameter({
     type: "object",
     properties: {
       field: { type: "string" },
-      value: { type: "string" }
-    }
-  }
+      value: { type: "string" },
+    },
+  },
 });
 ```
 
@@ -144,11 +148,11 @@ endpoint.setRequestBody({
     properties: {
       name: { type: "string" },
       email: { type: "string", format: "email" },
-      age: { type: "integer", minimum: 18 }
+      age: { type: "integer", minimum: 18 },
     },
-    required: ["name", "email"]
+    required: ["name", "email"],
   },
-  description: "User data" // Optional description
+  description: "User data", // Optional description
 });
 ```
 
@@ -167,9 +171,9 @@ endpoint.addJsonResponse(
     properties: {
       id: { type: "string" },
       name: { type: "string" },
-      email: { type: "string" }
-    }
-  } // Schema
+      email: { type: "string" },
+    },
+  }, // Schema
 );
 ```
 
@@ -187,19 +191,19 @@ endpoint.addResponse(
       type: "object",
       properties: {
         error: { type: "string" },
-        code: { type: "integer" }
-      }
-    }
-  }
+        code: { type: "integer" },
+      },
+    },
+  },
 );
 
 // Response with no content
 endpoint.addResponse(
   204,
   {
-    description: "User deleted successfully"
+    description: "User deleted successfully",
     // No schema or contentType needed for 204 No Content
-  }
+  },
 );
 
 // Response with non-JSON content
@@ -209,8 +213,37 @@ endpoint.addResponse(
     description: "User profile image",
     contentType: "image/png",
     // Schema is optional for binary responses
-  }
+  },
 );
+```
+
+## Security
+
+Define security requirements for your endpoint:
+
+```typescript
+// Set security requirements for this endpoint
+endpoint.setSecurity([
+  { "ApiKeyAuth": [] }, // API key security with no scopes
+  { "OAuth2": ["read:users", "write:users"] }, // OAuth2 security with scopes
+]);
+
+// Remove security requirements (make the endpoint public)
+endpoint.setSecurity([]);
+```
+
+The security array defines alternative security requirements (logical OR). If
+you need multiple schemes to be satisfied simultaneously (logical AND), include
+them in the same object:
+
+```typescript
+// Require both API key AND OAuth2 with specific scope
+endpoint.setSecurity([
+  {
+    "ApiKeyAuth": [],
+    "OAuth2": ["admin"],
+  },
+]);
 ```
 
 ## Putting It All Together
@@ -225,18 +258,15 @@ const updateUserEndpoint = new EndpointBuilder({
   .setDescription("Updates an existing user's information")
   .addTags(["users", "write"])
   .setOperationId("updateUser")
-  
   // Add path parameter
   .addPathParameter("userId", { type: "string" }, "User ID to update")
-  
   // Add header parameter
   .addHeaderParameter(
-    "If-Match", 
-    { type: "string" }, 
+    "If-Match",
+    { type: "string" },
     "ETag for concurrency control",
-    true
+    true,
   )
-  
   // Define request body
   .setRequestBody({
     contentType: "application/json",
@@ -251,13 +281,12 @@ const updateUserEndpoint = new EndpointBuilder({
           properties: {
             street: { type: "string" },
             city: { type: "string" },
-            postalCode: { type: "string" }
-          }
-        }
-      }
-    }
+            postalCode: { type: "string" },
+          },
+        },
+      },
+    },
   })
-  
   // Define successful response
   .addJsonResponse(200, "User updated successfully", {
     type: "object",
@@ -265,33 +294,32 @@ const updateUserEndpoint = new EndpointBuilder({
       id: { type: "string" },
       name: { type: "string" },
       email: { type: "string" },
-      updatedAt: { type: "string", format: "date-time" }
-    }
+      updatedAt: { type: "string", format: "date-time" },
+    },
   })
-  
   // Define error responses
   .addJsonResponse(400, "Invalid input", {
-    type: "object", 
+    type: "object",
     properties: {
       error: { type: "string" },
-      fields: { 
+      fields: {
         type: "array",
-        items: { type: "string" }
-      }
-    }
+        items: { type: "string" },
+      },
+    },
   })
   .addJsonResponse(404, "User not found", {
     type: "object",
     properties: {
-      error: { type: "string" }
-    }
+      error: { type: "string" },
+    },
   })
   .addJsonResponse(412, "Precondition failed", {
     type: "object",
     properties: {
       error: { type: "string" },
-      currentETag: { type: "string" }
-    }
+      currentETag: { type: "string" },
+    },
   });
 ```
 

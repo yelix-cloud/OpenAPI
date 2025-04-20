@@ -1,21 +1,21 @@
-import {
+import type {
   LowercasedOpenAPIMethods,
+  OpenAPICallback,
+  OpenAPIDefaultSchema,
+  OpenAPIExample, // Make sure this is imported
+  OpenAPIExampleMap,
+  OpenAPIExtenedRequestBodySchema,
+  OpenAPILink,
+  OpenAPIMediaType,
   OpenAPIOperation,
-  OpenAPIPathItem,
   OpenAPIParameter,
   OpenAPIParameterLocation,
-  OpenAPIDefaultSchema,
-  OpenAPIResponse,
-  OpenAPIMediaType,
-  OpenAPIRequestBodyNonDocumented,
-  OpenAPIExtenedRequestBodySchema,
+  OpenAPIPathItem,
   OpenAPIProperty,
-  OpenAPICallback,
-  OpenAPILink,
+  OpenAPIRequestBodyNonDocumented,
+  OpenAPIResponse,
   SecurityRequirement,
-  OpenAPIExampleMap,
-  OpenAPIExample,  // Make sure this is imported
-} from './OpenAPI.types.ts';
+} from "./OpenAPI.types.ts";
 
 class EndpointBuilder {
   private raw: OpenAPIPathItem;
@@ -46,12 +46,12 @@ class EndpointBuilder {
     return assigned;
   }
 
-  setTags(tags: string[]) {
+  setTags(tags: string[]): this {
     this.insideMethod.tags = tags;
     return this;
   }
 
-  addTag(tag: string) {
+  addTag(tag: string): this {
     if (!this.insideMethod.tags) {
       this.insideMethod.tags = [];
     }
@@ -59,7 +59,7 @@ class EndpointBuilder {
     return this;
   }
 
-  addTags(tags: string[]) {
+  addTags(tags: string[]): this {
     if (!this.insideMethod.tags) {
       this.insideMethod.tags = [];
     }
@@ -71,44 +71,44 @@ class EndpointBuilder {
    * Sets the operation ID for the endpoint
    * @param operationId Unique string used to identify the operation
    */
-  setOperationId(operationId: string) {
+  setOperationId(operationId: string): this {
     this.insideMethod.operationId = operationId;
     return this;
   }
-  
+
   /**
    * Sets the description for the endpoint
    * @param description Detailed explanation of the endpoint
    */
-  setDescription(description: string) {
+  setDescription(description: string): this {
     this.insideMethod.description = description;
     return this;
   }
-  
+
   /**
    * Sets the summary for the endpoint
    * @param summary Short summary of what the endpoint does
    */
-  setSummary(summary: string) {
+  setSummary(summary: string): this {
     this.insideMethod.summary = summary;
     return this;
   }
-  
+
   /**
    * Marks the endpoint as deprecated
    * @param isDeprecated Whether the endpoint is deprecated (defaults to true)
    */
-  setDeprecated(isDeprecated = true) {
+  setDeprecated(isDeprecated = true): this {
     this.insideMethod.deprecated = isDeprecated;
     return this;
   }
-  
+
   /**
    * Adds external documentation to the endpoint
    * @param url URL for the external documentation
    * @param description Optional description of the documentation
    */
-  setExternalDocs(url: string, description?: string) {
+  setExternalDocs(url: string, description?: string): this {
     this.insideMethod.externalDocs = {
       url,
       description,
@@ -126,39 +126,43 @@ class EndpointBuilder {
     description?: string;
     required?: boolean;
     schema?: OpenAPIDefaultSchema;
-  }) {
+  }): this {
     if (!this.insideMethod.parameters) {
       this.insideMethod.parameters = [];
     }
-    
+
     const parameter: OpenAPIParameter = {
       name: param.name,
       in: param.in,
       description: param.description,
-      required: param.in === 'path' ? true : param.required ?? false,
+      required: param.in === "path" ? true : param.required ?? false,
       schema: param.schema,
     };
-    
+
     this.insideMethod.parameters.push(parameter);
     return this;
   }
-  
+
   /**
    * Adds a path parameter to the endpoint
    * @param name Parameter name
    * @param schema Parameter schema
    * @param description Parameter description
    */
-  addPathParameter(name: string, schema?: OpenAPIDefaultSchema, description?: string) {
+  addPathParameter(
+    name: string,
+    schema?: OpenAPIDefaultSchema,
+    description?: string,
+  ): this {
     return this.addParameter({
       name,
-      in: 'path',
+      in: "path",
       description,
       required: true, // Path parameters are always required
-      schema: schema || { type: 'string' },
+      schema: schema || { type: "string" },
     });
   }
-  
+
   /**
    * Adds a query parameter to the endpoint
    * @param name Parameter name
@@ -167,20 +171,20 @@ class EndpointBuilder {
    * @param required Whether the parameter is required
    */
   addQueryParameter(
-    name: string, 
-    schema?: OpenAPIDefaultSchema, 
+    name: string,
+    schema?: OpenAPIDefaultSchema,
     description?: string,
-    required = false
-  ) {
+    required = false,
+  ): this {
     return this.addParameter({
       name,
-      in: 'query',
+      in: "query",
       description,
       required,
-      schema: schema || { type: 'string' },
+      schema: schema || { type: "string" },
     });
   }
-  
+
   /**
    * Adds a header parameter to the endpoint
    * @param name Header name
@@ -189,20 +193,20 @@ class EndpointBuilder {
    * @param required Whether the header is required
    */
   addHeaderParameter(
-    name: string, 
-    schema?: OpenAPIDefaultSchema, 
+    name: string,
+    schema?: OpenAPIDefaultSchema,
     description?: string,
-    required = false
-  ) {
+    required = false,
+  ): this {
     return this.addParameter({
       name,
-      in: 'header',
+      in: "header",
       description,
       required,
-      schema: schema || { type: 'string' },
+      schema: schema || { type: "string" },
     });
   }
-  
+
   /**
    * Adds a cookie parameter to the endpoint
    * @param name Cookie name
@@ -211,17 +215,17 @@ class EndpointBuilder {
    * @param required Whether the cookie is required
    */
   addCookieParameter(
-    name: string, 
-    schema?: OpenAPIDefaultSchema, 
+    name: string,
+    schema?: OpenAPIDefaultSchema,
     description?: string,
-    required = false
-  ) {
+    required = false,
+  ): this {
     return this.addParameter({
       name,
-      in: 'cookie',
+      in: "cookie",
       description,
       required,
-      schema: schema || { type: 'string' },
+      schema: schema || { type: "string" },
     });
   }
 
@@ -234,9 +238,9 @@ class EndpointBuilder {
     schema: OpenAPIDefaultSchema;
     required?: boolean;
     description?: string;
-  }) {
-    const contentType = config.contentType || 'application/json';
-    
+  }): this {
+    const contentType = config.contentType || "application/json";
+
     const requestBody: OpenAPIRequestBodyNonDocumented = {
       required: config.required ?? false,
       content: {
@@ -245,7 +249,7 @@ class EndpointBuilder {
         } as OpenAPIExtenedRequestBodySchema,
       },
     };
-    
+
     // In OpenAPI.types.ts, description is not part of OpenAPIRequestBodyNonDocumented
     // so we need to handle it differently or update the type definition
     this.insideMethod.requestBody = requestBody;
@@ -263,49 +267,53 @@ class EndpointBuilder {
       description: string;
       contentType?: string;
       schema?: OpenAPIDefaultSchema;
-    }
-  ) {
+    },
+  ): this {
     const response: OpenAPIResponse = {
       description: config.description,
     };
-    
+
     if (config.schema) {
-      const contentType = config.contentType || 'application/json';
+      const contentType = config.contentType || "application/json";
       response.content = {
         [contentType]: {
           schema: config.schema,
         } as OpenAPIMediaType,
       };
     }
-    
+
     if (!this.insideMethod.responses) {
       this.insideMethod.responses = {};
     }
-    
+
     this.insideMethod.responses[String(statusCode)] = response;
     return this;
   }
-  
+
   /**
    * Adds a JSON response to the endpoint
    * @param statusCode HTTP status code
    * @param description Response description
    * @param schema Response schema
    */
-  addJsonResponse(statusCode: string | number, description: string, schema: OpenAPIDefaultSchema) {
+  addJsonResponse(
+    statusCode: string | number,
+    description: string,
+    schema: OpenAPIDefaultSchema,
+  ): this {
     return this.addResponse(statusCode, {
       description,
-      contentType: 'application/json',
+      contentType: "application/json",
       schema,
     });
   }
-  
+
   /**
    * Sets servers that are specific to this endpoint
    * @param servers Array of server objects
    */
-  setServers(servers: Array<{ url: string; description?: string }>) {
-    this.insideMethod.servers = servers.map(server => ({
+  setServers(servers: Array<{ url: string; description?: string }>): this {
+    this.insideMethod.servers = servers.map((server) => ({
       url: server.url,
       description: server.description,
     }));
@@ -316,21 +324,21 @@ class EndpointBuilder {
    * Sets the security requirements for the endpoint
    * @param securityRequirements Array of security requirement objects
    */
-  setSecurity(securityRequirements: SecurityRequirement[]) {
+  setSecurity(securityRequirements: SecurityRequirement[]): this {
     this.insideMethod.security = securityRequirements;
     return this;
   }
-  
+
   /**
    * Adds a security requirement to the endpoint
    * @param name Name of the security scheme
    * @param scopes OAuth scopes if applicable
    */
-  addSecurityRequirement(name: string, scopes: string[] = []) {
+  addSecurityRequirement(name: string, scopes: string[] = []): this {
     if (!this.insideMethod.security) {
       this.insideMethod.security = [];
     }
-    
+
     this.insideMethod.security.push({ [name]: scopes });
     return this;
   }
@@ -340,19 +348,19 @@ class EndpointBuilder {
    * @param paramName Name of the parameter
    * @param example Example value or object
    */
-  setParameterExample(paramName: string, example: unknown) {
+  setParameterExample(paramName: string, example: unknown): this {
     if (!this.insideMethod.parameters) {
       return this;
     }
-    
-    const param = this.insideMethod.parameters.find(p => 
-      typeof p !== 'object' || !('$ref' in p) ? p.name === paramName : false
+
+    const param = this.insideMethod.parameters.find((p) =>
+      typeof p !== "object" || !("$ref" in p) ? p.name === paramName : false
     ) as OpenAPIParameter | undefined;
-    
+
     if (param) {
       param.example = example;
     }
-    
+
     return this;
   }
 
@@ -363,30 +371,30 @@ class EndpointBuilder {
    * @param example Example configuration
    */
   addParameterNamedExample(
-    paramName: string, 
-    exampleName: string, 
-    example: { value: unknown; summary?: string; description?: string }
-  ) {
+    paramName: string,
+    exampleName: string,
+    example: { value: unknown; summary?: string; description?: string },
+  ): this {
     if (!this.insideMethod.parameters) {
       return this;
     }
-    
-    const param = this.insideMethod.parameters.find(p => 
-      typeof p !== 'object' || !('$ref' in p) ? p.name === paramName : false
+
+    const param = this.insideMethod.parameters.find((p) =>
+      typeof p !== "object" || !("$ref" in p) ? p.name === paramName : false
     ) as OpenAPIParameter | undefined;
-    
+
     if (param) {
       if (!param.examples) {
         param.examples = {};
       }
-      
+
       param.examples[exampleName] = {
         value: example.value,
         summary: example.summary,
         description: example.description,
-      } as OpenAPIExample;  // Type assertion to ensure it's treated as an Example
+      } as OpenAPIExample; // Type assertion to ensure it's treated as an Example
     }
-    
+
     return this;
   }
 
@@ -395,16 +403,21 @@ class EndpointBuilder {
    * @param example Example value
    * @param contentType Media type (defaults to application/json)
    */
-  setRequestBodyExample(example: unknown, contentType = 'application/json') {
-    if (!this.insideMethod.requestBody || !this.insideMethod.requestBody.content) {
+  setRequestBodyExample(
+    example: unknown,
+    contentType = "application/json",
+  ): this {
+    if (
+      !this.insideMethod.requestBody || !this.insideMethod.requestBody.content
+    ) {
       return this;
     }
-    
+
     const mediaType = this.insideMethod.requestBody.content[contentType];
     if (mediaType) {
       mediaType.example = example;
     }
-    
+
     return this;
   }
 
@@ -415,21 +428,23 @@ class EndpointBuilder {
    * @param contentType Media type (defaults to application/json)
    */
   addRequestBodyNamedExample(
-    exampleName: string, 
+    exampleName: string,
     example: { value: unknown; summary?: string; description?: string },
-    contentType = 'application/json'
-  ) {
-    if (!this.insideMethod.requestBody || !this.insideMethod.requestBody.content) {
+    contentType = "application/json",
+  ): this {
+    if (
+      !this.insideMethod.requestBody || !this.insideMethod.requestBody.content
+    ) {
       return this;
     }
-    
+
     const mediaType = this.insideMethod.requestBody.content[contentType];
     if (mediaType) {
       if (!mediaType.examples) {
         // Initialize as an empty object (not an array)
         mediaType.examples = {} as OpenAPIExampleMap;
       }
-      
+
       // Now safely add to the examples object
       if (mediaType.examples) {
         mediaType.examples[exampleName] = {
@@ -439,7 +454,7 @@ class EndpointBuilder {
         };
       }
     }
-    
+
     return this;
   }
 
@@ -449,18 +464,22 @@ class EndpointBuilder {
    * @param example Example value
    * @param contentType Media type (defaults to application/json)
    */
-  setResponseExample(statusCode: string | number, example: unknown, contentType = 'application/json') {
+  setResponseExample(
+    statusCode: string | number,
+    example: unknown,
+    contentType = "application/json",
+  ): this {
     const status = String(statusCode);
-    
+
     if (!this.insideMethod.responses || !this.insideMethod.responses[status]) {
       return this;
     }
-    
+
     const response = this.insideMethod.responses[status] as OpenAPIResponse;
     if (response.content && response.content[contentType]) {
       response.content[contentType].example = example;
     }
-    
+
     return this;
   }
 
@@ -475,21 +494,21 @@ class EndpointBuilder {
     statusCode: string | number,
     exampleName: string,
     example: { value: unknown; summary?: string; description?: string },
-    contentType = 'application/json'
-  ) {
+    contentType = "application/json",
+  ): this {
     const status = String(statusCode);
-    
+
     if (!this.insideMethod.responses || !this.insideMethod.responses[status]) {
       return this;
     }
-    
+
     const response = this.insideMethod.responses[status] as OpenAPIResponse;
     if (response.content && response.content[contentType]) {
       if (!response.content[contentType].examples) {
         // Initialize as an empty object (not an array)
         response.content[contentType].examples = {} as OpenAPIExampleMap;
       }
-      
+
       // Now safely add to the examples object
       if (response.content[contentType].examples) {
         response.content[contentType].examples[exampleName] = {
@@ -499,7 +518,7 @@ class EndpointBuilder {
         };
       }
     }
-    
+
     return this;
   }
 
@@ -509,15 +528,19 @@ class EndpointBuilder {
    * @param expression Runtime expression that specifies the callback URL
    * @param pathItem Path item describing the callback operation
    */
-  addCallback(callbackName: string, expression: string, pathItem: OpenAPIPathItem) {
+  addCallback(
+    callbackName: string,
+    expression: string,
+    pathItem: OpenAPIPathItem,
+  ): this {
     if (!this.insideMethod.callbacks) {
       this.insideMethod.callbacks = {};
     }
-    
+
     this.insideMethod.callbacks[callbackName] = {
-      [expression]: pathItem
+      [expression]: pathItem,
     } as OpenAPICallback;
-    
+
     return this;
   }
 
@@ -536,42 +559,42 @@ class EndpointBuilder {
       parameters?: Record<string, unknown>;
       description?: string;
       server?: { url: string; description?: string };
-    }
-  ) {
+    },
+  ): this {
     const status = String(statusCode);
-    
+
     if (!this.insideMethod.responses || !this.insideMethod.responses[status]) {
       return this;
     }
-    
+
     const response = this.insideMethod.responses[status] as OpenAPIResponse;
     if (!response.links) {
       response.links = {};
     }
-    
+
     const link: OpenAPILink = {};
-    
+
     if (linkConfig.operationId) {
       link.operationId = linkConfig.operationId;
     } else if (linkConfig.operationRef) {
       link.operationRef = linkConfig.operationRef;
     }
-    
+
     if (linkConfig.parameters) {
       link.parameters = linkConfig.parameters;
     }
-    
+
     if (linkConfig.description) {
       link.description = linkConfig.description;
     }
-    
+
     if (linkConfig.server) {
       link.server = {
         url: linkConfig.server.url,
         description: linkConfig.server.description,
       };
     }
-    
+
     response.links[linkName] = link;
     return this;
   }
@@ -581,11 +604,11 @@ class EndpointBuilder {
    * @param extensionName Name of the extension (must start with x-)
    * @param value Extension value
    */
-  addExtension(extensionName: string, value: unknown) {
-    if (!extensionName.startsWith('x-')) {
-      throw new Error('Extension name must start with x-');
+  addExtension(extensionName: string, value: unknown): this {
+    if (!extensionName.startsWith("x-")) {
+      throw new Error("Extension name must start with x-");
     }
-    
+
     (this.insideMethod as Record<string, unknown>)[extensionName] = value;
     return this;
   }
@@ -596,23 +619,23 @@ class EndpointBuilder {
    * @param style Serialization style
    * @param explode Whether to explode array or object values
    */
-  setParameterStyle(paramName: string, style: string, explode?: boolean) {
+  setParameterStyle(paramName: string, style: string, explode?: boolean): this {
     if (!this.insideMethod.parameters) {
       return this;
     }
-    
-    const param = this.insideMethod.parameters.find(p => 
-      typeof p !== 'object' || !('$ref' in p) ? p.name === paramName : false
+
+    const param = this.insideMethod.parameters.find((p) =>
+      typeof p !== "object" || !("$ref" in p) ? p.name === paramName : false
     ) as OpenAPIParameter | undefined;
-    
+
     if (param) {
       param.style = style;
-      
+
       if (explode !== undefined) {
         param.explode = explode;
       }
     }
-    
+
     return this;
   }
 }

@@ -34,108 +34,155 @@ Deno.test("EndpointBuilder functionality tests", async (t) => {
       method: "get",
       title: "Get User",
     });
-    
+
     const pathItem = endpoint.getEndpoint();
-    
+
     // Verify method and title are correctly set
-    assertEquals(pathItem.get?.summary, "Get User", "Summary should match the title");
-    assertEquals(pathItem.get?.description, "Get User", "Description should match the title");
-    assertEquals(Object.keys(pathItem).includes("get"), true, "Method should be set correctly");
-    assertEquals(pathItem.get?.parameters?.length, 0, "Parameters should be initialized as empty array");
-    assertEquals(Object.keys(pathItem.get?.requestBody || {}).length, 0, "Request body should be initialized as empty object");
-    assertEquals(Object.keys(pathItem.get?.responses || {}).length, 0, "Responses should be initialized as empty object");
+    assertEquals(
+      pathItem.get?.summary,
+      "Get User",
+      "Summary should match the title",
+    );
+    assertEquals(
+      pathItem.get?.description,
+      "Get User",
+      "Description should match the title",
+    );
+    assertEquals(
+      Object.keys(pathItem).includes("get"),
+      true,
+      "Method should be set correctly",
+    );
+    assertEquals(
+      pathItem.get?.parameters?.length,
+      0,
+      "Parameters should be initialized as empty array",
+    );
+    assertEquals(
+      Object.keys(pathItem.get?.requestBody || {}).length,
+      0,
+      "Request body should be initialized as empty object",
+    );
+    assertEquals(
+      Object.keys(pathItem.get?.responses || {}).length,
+      0,
+      "Responses should be initialized as empty object",
+    );
   });
-  
+
   await t.step("should set tags using setTags method", () => {
     const endpoint = new EndpointBuilder({
       method: "post",
       title: "Create User",
     });
-    
+
     endpoint.setTags(["users", "create"]);
-    
+
     const pathItem = endpoint.getEndpoint();
-    
-    assertEquals(pathItem.post?.tags, ["users", "create"], "Tags should be set correctly");
+
+    assertEquals(
+      pathItem.post?.tags,
+      ["users", "create"],
+      "Tags should be set correctly",
+    );
   });
-  
+
   await t.step("should add a single tag using addTag method", () => {
     const endpoint = new EndpointBuilder({
       method: "get",
       title: "Get User",
     });
-    
+
     endpoint.addTag("users");
-    
+
     const pathItem = endpoint.getEndpoint();
-    
-    assertEquals(pathItem.get?.tags, ["users"], "Single tag should be added correctly");
+
+    assertEquals(
+      pathItem.get?.tags,
+      ["users"],
+      "Single tag should be added correctly",
+    );
   });
-  
+
   await t.step("should add multiple tags using addTags method", () => {
     const endpoint = new EndpointBuilder({
       method: "delete",
       title: "Delete User",
     });
-    
+
     endpoint.addTags(["users", "delete", "admin"]);
-    
+
     const pathItem = endpoint.getEndpoint();
-    
-    assertEquals(pathItem.delete?.tags, ["users", "delete", "admin"], "Multiple tags should be added correctly");
+
+    assertEquals(
+      pathItem.delete?.tags,
+      ["users", "delete", "admin"],
+      "Multiple tags should be added correctly",
+    );
   });
-  
+
   await t.step("should chain tag methods correctly", () => {
     const endpoint = new EndpointBuilder({
       method: "patch",
       title: "Update User",
     });
-    
+
     endpoint
       .addTag("users")
       .addTag("update")
       .addTags(["profile", "admin"]);
-    
+
     const pathItem = endpoint.getEndpoint();
-    
+
     assertEquals(
-      pathItem.patch?.tags, 
-      ["users", "update", "profile", "admin"], 
-      "Tags should be added in the correct order with chained methods"
+      pathItem.patch?.tags,
+      ["users", "update", "profile", "admin"],
+      "Tags should be added in the correct order with chained methods",
     );
   });
-  
+
   await t.step("should add tags to previously empty tags array", () => {
     const endpoint = new EndpointBuilder({
       method: "put",
       title: "Replace User",
     });
-    
+
     // First call should initialize the tags array
     endpoint.addTag("users");
     // Second call should add to the existing array
     endpoint.addTag("replace");
-    
+
     const pathItem = endpoint.getEndpoint();
-    
-    assertEquals(pathItem.put?.tags, ["users", "replace"], "Tags should be properly initialized and appended");
+
+    assertEquals(
+      pathItem.put?.tags,
+      ["users", "replace"],
+      "Tags should be properly initialized and appended",
+    );
   });
-  
+
   await t.step("should support different HTTP methods", () => {
-    const methods: ["get", "post", "put", "delete", "patch", "options"] = ["get", "post", "put", "delete", "patch", "options"];
-    
+    const methods: ["get", "post", "put", "delete", "patch", "options"] = [
+      "get",
+      "post",
+      "put",
+      "delete",
+      "patch",
+      "options",
+    ];
+
     for (const method of methods) {
       const endpoint = new EndpointBuilder({
         method,
         title: `${method.toUpperCase()} Operation`,
       });
-      
+
       const pathItem = endpoint.getEndpoint();
-      
+
       assertEquals(
-        pathItem[method]?.summary, 
-        `${method.toUpperCase()} Operation`, 
-        `${method.toUpperCase()} method should be correctly configured`
+        pathItem[method]?.summary,
+        `${method.toUpperCase()} Operation`,
+        `${method.toUpperCase()} method should be correctly configured`,
       );
     }
   });
