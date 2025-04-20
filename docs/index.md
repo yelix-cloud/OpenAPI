@@ -10,13 +10,17 @@ your API endpoints, schemas, responses, and more.
 - 📚 **OpenAPI 3.1 compatible**: Generate OpenAPI documentation that follows the
   latest specification
 - 🧩 **Components**: Define reusable schemas, responses, parameters, and more
+- 🏷️ **Tags**: Organize your API with descriptive, reusable tags
 - 📄 **JSON & YAML output**: Export your documentation in both formats
 - 🔄 **Validation**: Associate validation rules with your API documentation
+- 🔒 **Security**: Comprehensive security scheme definitions
 
 ## Documentation
 
 - [Getting Started](./getting-started.md): Learn how to use Yelix OpenAPI
 - [Components](./components.md): Learn how to use reusable components
+- [Tags](./tags.md): Learn how to organize your API with tags
+- [Security](./security.md): Learn how to secure your API
 - [Validation](./validation.md): Learn about validation rules
 
 ## Basic Example

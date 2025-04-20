@@ -12,8 +12,10 @@ import type {
   OpenAPIParameterLocation,
   OpenAPIPathItem,
   OpenAPIProperty,
+  OpenAPIReference,
   OpenAPIRequestBodyNonDocumented,
   OpenAPIResponse,
+  OpenAPISchema,
   SecurityRequirement,
 } from "./OpenAPI.types.ts";
 
@@ -41,9 +43,8 @@ class EndpointBuilder {
   }
 
   getEndpoint(): OpenAPIPathItem {
-    const assigned = this.raw;
-    assigned[this.method] = this.insideMethod;
-    return assigned;
+    this.raw[this.method] = this.insideMethod;
+    return this.raw;
   }
 
   setTags(tags: string[]): this {
@@ -233,19 +234,20 @@ class EndpointBuilder {
    * Sets the request body for the endpoint
    * @param config Request body configuration
    */
-  setRequestBody(config: {
+  setRequestBody({
+    contentType = "application/json",
+    schema,
+    required = true,
+  }: {
     contentType?: string;
-    schema: OpenAPIDefaultSchema;
+    schema: OpenAPIDefaultSchema | OpenAPISchema | OpenAPIReference;
     required?: boolean;
-    description?: string;
   }): this {
-    const contentType = config.contentType || "application/json";
-
     const requestBody: OpenAPIRequestBodyNonDocumented = {
-      required: config.required ?? false,
+      required: required ?? false,
       content: {
         [contentType]: {
-          schema: config.schema as OpenAPIProperty,
+          schema: schema as OpenAPIProperty,
         } as OpenAPIExtenedRequestBodySchema,
       },
     };
@@ -266,7 +268,7 @@ class EndpointBuilder {
     config: {
       description: string;
       contentType?: string;
-      schema?: OpenAPIDefaultSchema;
+      schema?: OpenAPIDefaultSchema | OpenAPISchema | OpenAPIReference;
     },
   ): this {
     const response: OpenAPIResponse = {
@@ -299,7 +301,7 @@ class EndpointBuilder {
   addJsonResponse(
     statusCode: string | number,
     description: string,
-    schema: OpenAPIDefaultSchema,
+    schema: OpenAPIDefaultSchema | OpenAPISchema | OpenAPIReference,
   ): this {
     return this.addResponse(statusCode, {
       description,

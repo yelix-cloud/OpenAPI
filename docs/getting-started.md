@@ -82,6 +82,32 @@ const getUsersEndpoint = new EndpointBuilder()
 openapi.addNewEndpoint_("/users", getUsersEndpoint);
 ```
 
+### Adding Tags for Organization
+
+Tags help organize and categorize your API operations:
+
+```typescript
+// Define tags at the OpenAPI level
+openapi.addTag("users", "User management endpoints");
+openapi.addTag("products", "Product catalog endpoints");
+openapi.addTag("auth", "Authentication and authorization");
+
+// Then reference these tags in your endpoints
+const getUsersEndpoint = new EndpointBuilder()
+  .setOperation("get")
+  .setTags(["users"]) // Add the "users" tag to this endpoint
+  .setSummary("Get users");
+// ...more endpoint configuration
+
+// Tags can also be added individually
+const createProductEndpoint = new EndpointBuilder()
+  .setOperation("post")
+  .addTag("products") // Add a single tag
+  .addTag("admin") // Add another tag
+  .setSummary("Create product");
+// ...more endpoint configuration
+```
+
 ### Using Components for Reusability
 
 For better organization and to avoid duplication, use the OpenAPI component

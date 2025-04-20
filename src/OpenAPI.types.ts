@@ -26,7 +26,7 @@ type LowercasedOpenAPIMethods = Lowercase<OpenAPIMethods>;
 type OpenAPIDoc = {
   openapi: string;
   info: OpenAPIInfo;
-  jsonSchemaDialect?: string;
+  jsonSchemaDialect?: JSONSchemaDialect;
   servers?: OpenAPIServer[];
   paths?: Record<string, OpenAPIPathItem | OpenAPIReference>;
   webhooks?: Record<string, OpenAPIPathItem | OpenAPIReference>;
@@ -34,6 +34,26 @@ type OpenAPIDoc = {
   security?: SecurityRequirement[]; // Changed from SecurityRequirement to SecurityRequirement[]
   tags?: OpenAPITag[];
   externalDocs?: OpenAPIExternalDocs;
+};
+
+/**
+ * JSON Schema dialects supported by OpenAPI 3.1
+ * OpenAPI 3.1 uses JSON Schema 2020-12 by default, but can use other dialects
+ */
+type JSONSchemaDialect =
+  | "https://json-schema.org/draft/2020-12/schema" // Default in OpenAPI 3.1
+  | "https://json-schema.org/draft/2019-09/schema"
+  | "https://json-schema.org/draft/07/schema"
+  | "https://json-schema.org/draft-06/schema#"
+  | "https://json-schema.org/draft-04/schema#"
+  | string; // Allow custom dialects
+
+/**
+ * JSON Schema Vocabulary configuration for OpenAPI 3.1
+ */
+type JSONSchemaVocabulary = {
+  uri: string;
+  description?: string;
 };
 
 /**
@@ -157,6 +177,7 @@ type OpenAPIServerVariable = {
  * @property {Record<string, OpenAPILink>} [links] - Reusable Link Objects.
  * @property {Record<string, OpenAPICallback>} [callbacks] - Reusable Callback Objects.
  * @property {Record<string, OpenAPIPathItem>} [pathItems] - Reusable Path Item Objects.
+ * @property {Record<string, OpenAPIPathItem>} [webhooks] - Reusable Webhook Objects.
  */
 type OpenAPIComponents = {
   schemas?: Record<string, OpenAPISchema>;
@@ -170,6 +191,7 @@ type OpenAPIComponents = {
   links?: Record<string, OpenAPILink>;
   callbacks?: Record<string, OpenAPICallback>;
   pathItems?: Record<string, OpenAPIPathItem>;
+  webhooks?: Record<string, OpenAPIPathItem>;
 };
 
 type OpenAPIRequestBodyNonDocumented = {
@@ -184,7 +206,8 @@ type OpenAPIDataTypes =
   | "integer"
   | "boolean"
   | "array"
-  | "object";
+  | "object"
+  | "null"; // Add "null" as a valid data type for JSON Schema 2020-12 compatibility
 
 type OpenAPIExtenedRequestBodySchema = OpenAPIMediaType & {
   type?: OpenAPIDataTypes;
@@ -242,6 +265,79 @@ type OpenAPISchema = {
   externalDocs?: OpenAPIExternalDocs;
   // @deprecated Deprecated: The example property has been deprecated in favor of the JSON Schema examples keyword. Use of example is discouraged, and later versions of this specification may remove it.
   // example?: any;
+
+  // JSON Schema 2020-12 supported keywords
+  $schema?: JSONSchemaDialect;
+  $vocabulary?: Record<string, boolean>;
+  $id?: string;
+  $anchor?: string;
+  $dynamicAnchor?: string;
+  $ref?: string;
+  $dynamicRef?: string;
+  $defs?: Record<string, OpenAPISchema>;
+  $comment?: string;
+
+  // Standard JSON Schema type keywords
+  type?: OpenAPIDataTypes | OpenAPIDataTypes[];
+  enum?: unknown[];
+  const?: unknown;
+  multipleOf?: number;
+  maximum?: number;
+  exclusiveMaximum?: number;
+  minimum?: number;
+  exclusiveMinimum?: number;
+  maxLength?: number;
+  minLength?: number;
+  pattern?: string;
+  maxItems?: number;
+  minItems?: number;
+  uniqueItems?: boolean;
+  maxContains?: number;
+  minContains?: number;
+  maxProperties?: number;
+  minProperties?: number;
+  required?: string[];
+  dependentRequired?: Record<string, string[]>;
+
+  // Content validation keywords
+  contentEncoding?: string;
+  contentMediaType?: string;
+  contentSchema?: OpenAPISchema;
+
+  // Format assertion keywords
+  format?: string;
+
+  // Structural validation keywords
+  properties?: Record<string, OpenAPISchema>;
+  patternProperties?: Record<string, OpenAPISchema>;
+  additionalProperties?: boolean | OpenAPISchema;
+  propertyNames?: OpenAPISchema;
+  unevaluatedProperties?: boolean | OpenAPISchema;
+
+  // Array validation keywords
+  items?: OpenAPISchema;
+  prefixItems?: OpenAPISchema[];
+  contains?: OpenAPISchema;
+  unevaluatedItems?: boolean | OpenAPISchema;
+
+  // Validation keywords for any instance type
+  allOf?: OpenAPISchema[];
+  anyOf?: OpenAPISchema[];
+  oneOf?: OpenAPISchema[];
+  not?: OpenAPISchema;
+  if?: OpenAPISchema;
+  then?: OpenAPISchema;
+  else?: OpenAPISchema;
+  dependentSchemas?: Record<string, OpenAPISchema>;
+
+  // JSON Schema 2020-12 specific metadata and annotations
+  title?: string;
+  description?: string;
+  default?: unknown;
+  deprecated?: boolean;
+  readOnly?: boolean;
+  writeOnly?: boolean;
+  examples?: unknown[];
 };
 
 /**
@@ -800,10 +896,23 @@ type NewEndpointInformation = {
   description?: string;
 };
 
+/**
+ * Options for creating a new webhook
+ */
+type WebhookOptions = {
+  summary?: string;
+  description?: string;
+  servers?: OpenAPIServer[];
+  parameters?: (OpenAPIParameter | OpenAPIReference)[];
+  operations?: Record<string, OpenAPIOperation>;
+};
+
 export type {
   AddOpenAPIEndpointResponseParams,
   DescribeValidationType,
   InitializeOpenAPIParams,
+  JSONSchemaDialect,
+  JSONSchemaVocabulary,
   LowercasedOpenAPIMethods,
   NewEndpointInformation,
   NewEndpointParams,
@@ -847,4 +956,5 @@ export type {
   RuntimeExpression,
   RuntimeExpressionOrValue,
   SecurityRequirement,
+  WebhookOptions,
 };

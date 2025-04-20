@@ -3,6 +3,10 @@
 This guide explains how to define and use schemas in the OpenAPI library, which
 are used to describe the structure of request and response data.
 
+> **Note**: OpenAPI 3.1 supports JSON Schema 2020-12. For advanced JSON Schema
+> features, see the [JSON Schema Vocabularies](./json-schema-vocabularies.md)
+> documentation.
+
 ## Basic Schema Types
 
 OpenAPI supports the following basic data types:
@@ -186,11 +190,13 @@ Add examples to your schemas:
     name: { type: "string" },
     email: { type: "string", format: "email" }
   },
-  example: {
-    id: "123e4567-e89b-12d3-a456-426614174000",
-    name: "John Smith",
-    email: "john.smith@example.com"
-  }
+  examples: [
+    {
+      id: "123e4567-e89b-12d3-a456-426614174000",
+      name: "John Smith",
+      email: "john.smith@example.com"
+    }
+  ]
 }
 ```
 
@@ -334,6 +340,24 @@ endpoint.addQueryParameter(
   "Filter results by status",
 );
 ```
+
+## Advanced Schema Features
+
+OpenAPI 3.1 supports the full JSON Schema 2020-12 specification, which includes
+advanced features like:
+
+- JSON Schema dialects with `$schema`
+- Schema vocabularies with `$vocabulary`
+- IDs and anchors with `$id`, `$anchor`, and `$dynamicAnchor`
+- Dynamic references with `$dynamicRef`
+- Schema definitions with `$defs`
+- Unevaluated properties and items control
+- Content validation with `contentEncoding`, `contentMediaType`, and
+  `contentSchema`
+- Conditional validation with `if`/`then`/`else`
+
+For details on these advanced features, see the
+[JSON Schema Vocabularies](./json-schema-vocabularies.md) documentation.
 
 ## Best Practices
 

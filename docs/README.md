@@ -8,8 +8,11 @@ developer-friendly way to define OpenAPI specifications for your APIs.
 - [Getting Started](./getting-started.md)
 - [EndpointBuilder](./endpoint-builder.md)
 - [OpenAPI Schema](./openapi-schema.md)
+- [JSON Schema Vocabularies](./json-schema-vocabularies.md)
 - [Security](./security.md)
+- [Tags](./tags.md)
 - [Components](./components.md)
+- [Webhooks](./webhooks.md)
 - [Examples](./examples.md)
 
 ## Overview
@@ -22,6 +25,10 @@ following the OpenAPI 3.1 standard. It provides:
 - Tools for serialization to JSON and YAML formats
 - Validation rule handling and documentation
 - Comprehensive security scheme definitions and requirements
+- Tag management for API organization and categorization
+- Webhook support for defining asynchronous API callbacks
+- Component reusability for schemas, responses, parameters, and webhooks
+- Full JSON Schema 2020-12 support with advanced schema vocabularies
 
 ## Basic Usage
 
@@ -55,6 +62,34 @@ const getUserEndpoint = new EndpointBuilder({
 
 // Add the endpoint to the API document
 api.addNewEndpoint_("/users/{id}", getUserEndpoint);
+
+// Add a webhook to the API
+api.createWebhook("userUpdated", {
+  summary: "User Updated Notification",
+  description: "Sent when a user profile is updated",
+  operations: {
+    post: {
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                userId: { type: "string" },
+                updatedAt: { type: "string", format: "date-time" },
+              },
+              required: ["userId", "updatedAt"],
+            },
+          },
+        },
+        required: true,
+      },
+      responses: {
+        "200": { description: "Webhook received" },
+      },
+    },
+  },
+});
 
 // Export as JSON or YAML
 const jsonString = api.getJSONString();

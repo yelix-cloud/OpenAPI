@@ -1,13 +1,17 @@
 import type { EndpointBuilder } from "./EndpointBuilder.ts";
 import type {
   DescribeValidationType,
+  JSONSchemaDialect,
+  JSONSchemaVocabulary,
   OpenAPICallback,
   OpenAPIComponents,
   OpenAPIDoc,
   OpenAPIExample,
+  OpenAPIExternalDocs,
   OpenAPIHeader,
   OpenAPILink,
   OpenAPIOAuthFlows,
+  OpenAPIOperation,
   OpenAPIParameter,
   OpenAPIParams,
   OpenAPIPathItem,
@@ -16,13 +20,26 @@ import type {
   OpenAPIResponse,
   OpenAPISchema,
   OpenAPISecurityScheme,
+  OpenAPITag,
   SecurityRequirement,
+  WebhookOptions,
 } from "./OpenAPI.types.ts";
 import { stringify } from "jsr:@eemeli/yaml@2.7.1";
+
+// Commonly used JSON Schema dialects
+const SCHEMA_DIALECTS = {
+  // Default for OpenAPI 3.1
+  DRAFT_2020_12: "https://json-schema.org/draft/2020-12/schema" as const,
+  DRAFT_2019_09: "https://json-schema.org/draft/2019-09/schema" as const,
+  DRAFT_07: "https://json-schema.org/draft/07/schema" as const,
+  DRAFT_06: "https://json-schema.org/draft-06/schema#" as const,
+  DRAFT_04: "https://json-schema.org/draft-04/schema#" as const,
+};
 
 class OpenAPI {
   readonly _openAPI: OpenAPIDoc;
   private describeValidation: Record<string, DescribeValidationType> = {};
+  private schemaVocabularies: Record<string, JSONSchemaVocabulary> = {};
 
   constructor(config: OpenAPIParams) {
     this._openAPI = {
@@ -32,6 +49,8 @@ class OpenAPI {
         version: config.version,
         description: config.description || "OpenAPI API Documentation",
       },
+      // Default to JSON Schema 2020-12 dialect for OpenAPI 3.1
+      jsonSchemaDialect: SCHEMA_DIALECTS.DRAFT_2020_12,
       paths: {},
       servers: config.servers || [],
       components: {}, // Initialize empty components object
@@ -89,14 +108,29 @@ class OpenAPI {
    *
    * @param name - The name to use for this schema
    * @param schema - The schema definition
+   * @param dialect - Optional JSON Schema dialect to use for this schema
    * @returns The reference object that can be used in other parts of the API
    */
-  addSchema(name: string, schema: OpenAPISchema): OpenAPIReference {
+  addSchema(
+    name: string,
+    schema: Partial<OpenAPISchema>,
+    dialect?: JSONSchemaDialect,
+  ): OpenAPIReference {
     const components = this.ensureComponents();
     if (!components.schemas) {
       components.schemas = {};
     }
-    components.schemas[name] = schema;
+
+    // Only add $schema if explicitly provided or different from document default
+    const finalSchema: OpenAPISchema = {
+      ...schema,
+    };
+
+    if (dialect) {
+      finalSchema.$schema = dialect;
+    }
+
+    components.schemas[name] = finalSchema;
     return { $ref: `#/components/schemas/${name}` };
   }
 
@@ -401,7 +435,7 @@ class OpenAPI {
       return undefined;
     }
 
-    const parts = ref.substring(2).split('/');
+    const parts = ref.substring(2).split("/");
     if (parts.length !== 3) {
       return undefined;
     }
@@ -409,7 +443,7 @@ class OpenAPI {
     // parts[0] should be "components"
     // parts[1] should be the component type (e.g., "securitySchemes")
     // parts[2] should be the component name (e.g., "ApiKey")
-    
+
     const componentType = parts[1] as keyof OpenAPIComponents;
     const componentName = parts[2];
 
@@ -427,6 +461,438 @@ class OpenAPI {
     // Return the component from the collection if it exists
     return (collection as Record<string, unknown>)[componentName];
   }
+
+  /**
+   * Adds a tag to the OpenAPI specification.
+   *
+   * @param name - The name of the tag
+   * @param description - Optional description of what the tag is for
+   * @param externalDocs - Optional external documentation for this tag
+   * @returns This OpenAPI instance for chaining
+   */
+  addTag(
+    name: string,
+    description?: string,
+    externalDocs?: OpenAPIExternalDocs,
+  ): this {
+    if (!this._openAPI.tags) {
+      this._openAPI.tags = [];
+    }
+
+    // Check if tag already exists to avoid duplicates
+    const existingTag = this._openAPI.tags.find((tag) => tag.name === name);
+    if (!existingTag) {
+      const tag: OpenAPITag = { name };
+
+      if (description) {
+        tag.description = description;
+      }
+
+      if (externalDocs) {
+        tag.externalDocs = externalDocs;
+      }
+
+      this._openAPI.tags.push(tag);
+    }
+
+    return this;
+  }
+
+  /**
+   * Gets all tags defined in the OpenAPI specification.
+   *
+   * @returns Array of tag objects
+   */
+  getTags(): OpenAPITag[] {
+    return this._openAPI.tags || [];
+  }
+
+  /**
+   * Gets a tag by name
+   *
+   * @param name - The name of the tag to find
+   * @returns The tag object if found, or undefined
+   */
+  getTagByName(name: string): OpenAPITag | undefined {
+    return this._openAPI.tags?.find((tag) => tag.name === name);
+  }
+
+  /**
+   * Updates an existing tag in the OpenAPI specification.
+   *
+   * @param name - The name of the tag to update
+   * @param description - New description for the tag
+   * @param externalDocs - New external documentation for the tag
+   * @returns boolean indicating if the tag was successfully updated
+   */
+  updateTag(
+    name: string,
+    description?: string,
+    externalDocs?: OpenAPIExternalDocs,
+  ): boolean {
+    if (!this._openAPI.tags) {
+      return false;
+    }
+
+    const tagIndex = this._openAPI.tags.findIndex((tag) => tag.name === name);
+    if (tagIndex === -1) {
+      return false;
+    }
+
+    const tag = this._openAPI.tags[tagIndex];
+
+    if (description !== undefined) {
+      tag.description = description;
+    }
+
+    if (externalDocs !== undefined) {
+      tag.externalDocs = externalDocs;
+    }
+
+    return true;
+  }
+
+  /**
+   * Removes a tag from the OpenAPI specification.
+   * Note: This doesn't update operations that might be using this tag.
+   *
+   * @param name - The name of the tag to remove
+   * @returns boolean indicating if the tag was successfully removed
+   */
+  removeTag(name: string): boolean {
+    if (!this._openAPI.tags) {
+      return false;
+    }
+
+    const initialLength = this._openAPI.tags.length;
+    this._openAPI.tags = this._openAPI.tags.filter((tag) => tag.name !== name);
+
+    return initialLength > this._openAPI.tags.length;
+  }
+
+  /**
+   * Add external documentation for a tag
+   *
+   * @param tagName - The name of the tag to add documentation to
+   * @param url - Required URL for the external documentation
+   * @param description - Optional description of the documentation
+   * @returns boolean indicating if the documentation was added successfully
+   */
+  addTagExternalDocs(
+    tagName: string,
+    url: string,
+    description?: string,
+  ): boolean {
+    if (!this._openAPI.tags) {
+      return false;
+    }
+
+    const tag = this._openAPI.tags.find((t) => t.name === tagName);
+    if (!tag) {
+      return false;
+    }
+
+    tag.externalDocs = { url };
+    if (description) {
+      tag.externalDocs.description = description;
+    }
+
+    return true;
+  }
+
+  /**
+   * Creates external documentation object that can be used with tags
+   * or other OpenAPI elements
+   *
+   * @param url - The URL for the external documentation
+   * @param description - Optional description of the documentation
+   * @returns An OpenAPIExternalDocs object
+   */
+  createExternalDocs(url: string, description?: string): OpenAPIExternalDocs {
+    const docs: OpenAPIExternalDocs = { url };
+    if (description) {
+      docs.description = description;
+    }
+    return docs;
+  }
+
+  /**
+   * Adds a webhook to the OpenAPI document
+   *
+   * @param name - The name to use for this webhook (used as the key in webhooks object)
+   * @param pathItem - The webhook path item definition or a reference
+   * @returns This OpenAPI instance for chaining
+   */
+  addWebhook(name: string, pathItem: OpenAPIPathItem | OpenAPIReference): this {
+    if (!this._openAPI.webhooks) {
+      this._openAPI.webhooks = {};
+    }
+    this._openAPI.webhooks[name] = pathItem;
+    return this;
+  }
+
+  /**
+   * Creates a webhook and adds it to the OpenAPI document
+   *
+   * @param name - The name to use for this webhook (used as the key in webhooks object)
+   * @param options - Configuration options for the webhook
+   * @returns This OpenAPI instance for chaining
+   */
+  createWebhook(name: string, options: WebhookOptions): this {
+    const pathItem: OpenAPIPathItem = {};
+
+    if (options.summary) {
+      pathItem.summary = options.summary;
+    }
+
+    if (options.description) {
+      pathItem.description = options.description;
+    }
+
+    if (options.servers) {
+      pathItem.servers = options.servers;
+    }
+
+    if (options.parameters) {
+      pathItem.parameters = options.parameters;
+    }
+
+    // Add the operations to the path item
+    if (options.operations) {
+      for (const [method, operation] of Object.entries(options.operations)) {
+        // Validate that the method is a valid HTTP method
+        if (
+          ["get", "post", "put", "delete", "options", "head", "patch", "trace"]
+            .includes(method)
+        ) {
+          pathItem[
+            method as keyof Pick<
+              OpenAPIPathItem,
+              | "get"
+              | "post"
+              | "put"
+              | "delete"
+              | "options"
+              | "head"
+              | "patch"
+              | "trace"
+            >
+          ] = operation;
+        }
+      }
+    }
+
+    return this.addWebhook(name, pathItem);
+  }
+
+  /**
+   * Gets all webhooks defined in the OpenAPI document
+   *
+   * @returns Record of webhook names to path items or references
+   */
+  getWebhooks():
+    | Record<string, OpenAPIPathItem | OpenAPIReference>
+    | undefined {
+    return this._openAPI.webhooks;
+  }
+
+  /**
+   * Gets a specific webhook by name
+   *
+   * @param name - The name of the webhook to retrieve
+   * @returns The webhook path item or reference, or undefined if not found
+   */
+  getWebhookByName(
+    name: string,
+  ): OpenAPIPathItem | OpenAPIReference | undefined {
+    return this._openAPI.webhooks?.[name];
+  }
+
+  /**
+   * Updates an existing webhook in the OpenAPI document
+   *
+   * @param name - The name of the webhook to update
+   * @param pathItem - The new webhook path item or reference
+   * @returns boolean indicating if the webhook was successfully updated
+   */
+  updateWebhook(
+    name: string,
+    pathItem: OpenAPIPathItem | OpenAPIReference,
+  ): boolean {
+    if (!this._openAPI.webhooks || !this._openAPI.webhooks[name]) {
+      return false;
+    }
+
+    this._openAPI.webhooks[name] = pathItem;
+    return true;
+  }
+
+  /**
+   * Removes a webhook from the OpenAPI document
+   *
+   * @param name - The name of the webhook to remove
+   * @returns boolean indicating if the webhook was successfully removed
+   */
+  removeWebhook(name: string): boolean {
+    if (!this._openAPI.webhooks || !this._openAPI.webhooks[name]) {
+      return false;
+    }
+
+    delete this._openAPI.webhooks[name];
+    return true;
+  }
+
+  /**
+   * Adds a webhook operation for a specific HTTP method
+   *
+   * @param webhookName - The name of the webhook
+   * @param method - The HTTP method for this operation
+   * @param operation - The operation definition
+   * @returns boolean indicating if the operation was successfully added
+   */
+  addWebhookOperation(
+    webhookName: string,
+    method:
+      | "get"
+      | "post"
+      | "put"
+      | "delete"
+      | "options"
+      | "head"
+      | "patch"
+      | "trace",
+    operation: OpenAPIOperation,
+  ): boolean {
+    if (!this._openAPI.webhooks) {
+      this._openAPI.webhooks = {};
+    }
+
+    // Check if the webhook exists
+    if (!this._openAPI.webhooks[webhookName]) {
+      return false; // Return false if webhook doesn't exist
+    }
+
+    const webhook = this._openAPI.webhooks[webhookName];
+
+    // If it's a reference, we can't add operations to it
+    if ("$ref" in webhook) {
+      return false;
+    }
+
+    // Add the operation to the webhook
+    webhook[method] = operation;
+    return true;
+  }
+
+  /**
+   * Creates a reference to a webhook in the components section
+   *
+   * @param name - The name of the webhook in components to reference
+   * @returns A reference object pointing to the webhook
+   */
+  createWebhookReference(name: string): OpenAPIReference {
+    return { $ref: `#/components/webhooks/${name}` };
+  }
+
+  /**
+   * Adds a reusable webhook to the components section
+   *
+   * @param name - The name to use for this webhook in the components section
+   * @param pathItem - The webhook path item definition
+   * @returns A reference object that can be used with addWebhook
+   */
+  addComponentWebhook(
+    name: string,
+    pathItem: OpenAPIPathItem,
+  ): OpenAPIReference {
+    const components = this.ensureComponents();
+
+    if (!components.webhooks) {
+      components.webhooks = {};
+    }
+
+    components.webhooks[name] = pathItem;
+    return this.createWebhookReference(name);
+  }
+
+  /**
+   * Sets the default JSON Schema dialect for the OpenAPI document.
+   * This defines which JSON Schema version should be used by default.
+   *
+   * @param dialect - The JSON Schema dialect URI, use SCHEMA_DIALECTS constants for convenience
+   * @returns This OpenAPI instance for chaining
+   */
+  setJSONSchemaDialect(dialect: JSONSchemaDialect): this {
+    this._openAPI.jsonSchemaDialect = dialect;
+    return this;
+  }
+
+  /**
+   * Gets the current JSON Schema dialect set for the OpenAPI document.
+   *
+   * @returns The JSON Schema dialect URI
+   */
+  getJSONSchemaDialect(): JSONSchemaDialect {
+    return this._openAPI.jsonSchemaDialect || SCHEMA_DIALECTS.DRAFT_2020_12;
+  }
+
+  /**
+   * Registers a JSON Schema vocabulary with documentation
+   *
+   * @param uri - The URI identifying the vocabulary
+   * @param description - Optional description of the vocabulary
+   * @returns This OpenAPI instance for chaining
+   */
+  registerVocabulary(uri: string, description?: string): this {
+    this.schemaVocabularies[uri] = {
+      uri,
+      description,
+    };
+    return this;
+  }
+
+  /**
+   * Creates a schema with a specific JSON Schema dialect
+   *
+   * @param schema - The schema definition
+   * @param dialect - Optional JSON Schema dialect to use for this schema
+   * @returns The schema with $schema property set
+   */
+  createSchema(
+    schema: Partial<OpenAPISchema>,
+    dialect?: JSONSchemaDialect,
+  ): OpenAPISchema {
+    return {
+      ...schema,
+      $schema: dialect || this.getJSONSchemaDialect(),
+    };
+  }
+
+  /**
+   * Creates a schema with specific vocabularies enabled
+   *
+   * @param schema - The schema definition
+   * @param vocabularies - Record of vocabulary URIs and boolean indicating if they're required
+   * @returns The schema with $vocabulary property set
+   */
+  createSchemaWithVocabularies(
+    schema: Partial<OpenAPISchema>,
+    vocabularies: Record<string, boolean>,
+  ): OpenAPISchema {
+    return {
+      ...schema,
+      $vocabulary: vocabularies,
+    };
+  }
+
+  /**
+   * Gets constants for commonly used JSON Schema dialects
+   *
+   * @returns Object containing common JSON Schema dialect URIs
+   */
+  static get SCHEMA_DIALECTS(): Record<string, JSONSchemaDialect> {
+    return SCHEMA_DIALECTS;
+  }
 }
 
-export { OpenAPI };
+export { OpenAPI, SCHEMA_DIALECTS };
