@@ -1,1 +1,2 @@
-export * from "./src/index.ts";
+export * from "./src/Core.types.ts";
+export * from "./src/Licenses.types.ts";

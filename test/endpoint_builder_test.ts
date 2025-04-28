@@ -1,189 +1,88 @@
-// This file serves as an entry point for running all EndpointBuilder tests
+import { createEndpointBuilder } from "../src/EndpointBuilder.ts";
+import { assertEquals } from "@std/assert";
 
-// Basic functionality tests
-import "./builder/basic/functionality_test.ts";
-import "./builder/basic/tags_test.ts";
+Deno.test("EndpointBuilder creates with correct method", () => {
+  const endpoint = createEndpointBuilder("get");
+  assertEquals(endpoint.method, "get");
+});
 
-// Security tests
-import "./builder/security/security_tests.ts";
+Deno.test("EndpointBuilder sets basic properties", () => {
+  const endpoint = createEndpointBuilder("post")
+    .setOperationId("createUser")
+    .setSummary("Create a user")
+    .setDescription("This endpoint creates a new user")
+    .setTags(["User", "Create"]);
 
-// Examples tests
-import "./builder/examples/parameter_examples_test.ts";
-import "./builder/examples/request_body_examples_test.ts";
-import "./builder/examples/response_examples_test.ts";
+  assertEquals(endpoint.operation.operationId, "createUser");
+  assertEquals(endpoint.operation.summary, "Create a user");
+  assertEquals(
+    endpoint.operation.description,
+    "This endpoint creates a new user",
+  );
+  assertEquals(endpoint.operation.tags, ["User", "Create"]);
+});
 
-// Callbacks and links tests
-import "./builder/callbacks-links/callbacks_test.ts";
-import "./builder/callbacks-links/links_test.ts";
+Deno.test("EndpointBuilder sets external docs", () => {
+  const endpoint = createEndpointBuilder("get").setExternalDocs(
+    "https://example.com/docs",
+    "API Documentation",
+  );
 
-// Extensions and styling tests
-import "./builder/extensions-styling/extensions_test.ts";
-import "./builder/extensions-styling/parameter_styling_test.ts";
+  assertEquals(
+    endpoint.operation.externalDocs?.url,
+    "https://example.com/docs",
+  );
+  assertEquals(
+    endpoint.operation.externalDocs?.description,
+    "API Documentation",
+  );
+});
 
-// Method chaining tests
-import "./builder/method_chaining_test.ts";
-
-// No additional code needed - the tests are registered when imported
-
-import { EndpointBuilder } from "../src/EndpointBuilder.ts";
-import { assertEquals } from "jsr:@std/assert";
-
-Deno.test("EndpointBuilder functionality tests", async (t) => {
-  await t.step("should create an endpoint with basic information", () => {
-    const endpoint = new EndpointBuilder({
-      method: "get",
-      title: "Get User",
-    });
-
-    const pathItem = endpoint.getEndpoint();
-
-    // Verify method and title are correctly set
-    assertEquals(
-      pathItem.get?.summary,
-      "Get User",
-      "Summary should match the title",
-    );
-    assertEquals(
-      pathItem.get?.description,
-      "Get User",
-      "Description should match the title",
-    );
-    assertEquals(
-      Object.keys(pathItem).includes("get"),
-      true,
-      "Method should be set correctly",
-    );
-    assertEquals(
-      pathItem.get?.parameters?.length,
-      0,
-      "Parameters should be initialized as empty array",
-    );
-    assertEquals(
-      Object.keys(pathItem.get?.requestBody || {}).length,
-      0,
-      "Request body should be initialized as empty object",
-    );
-    assertEquals(
-      Object.keys(pathItem.get?.responses || {}).length,
-      0,
-      "Responses should be initialized as empty object",
-    );
+Deno.test("EndpointBuilder sets security requirements", () => {
+  const endpoint = createEndpointBuilder("delete").setSecurity({
+    apiKey: [],
+    oauth2: ["read", "write"],
   });
 
-  await t.step("should set tags using setTags method", () => {
-    const endpoint = new EndpointBuilder({
-      method: "post",
-      title: "Create User",
-    });
+  const fallbacked = endpoint?.operation?.security ?? {};
+  assertEquals("apiKey" in fallbacked, true);
+  assertEquals("oauth2" in fallbacked, true);
+  assertEquals(fallbacked["apiKey"], []);
+  assertEquals(fallbacked["oauth2"], ["read", "write"]);
+});
 
-    endpoint.setTags(["users", "create"]);
+Deno.test("EndpointBuilder sets response objects", () => {
+  const endpoint = createEndpointBuilder("get").setResponses({
+    200: {
+      description: "Success response",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    404: {
+      description: "Not found",
+    },
+  });
 
-    const pathItem = endpoint.getEndpoint();
+  const response200 = endpoint.operation.responses?.[200];
+  const response404 = endpoint.operation.responses?.[404];
 
+  assertEquals(response200?.description, "Success response");
+  assertEquals(response404?.description, "Not found");
+
+  if (response200 && "content" in response200) {
+    const jsonContent = response200.content?.["application/json"];
+    assertEquals(jsonContent?.schema?.type, "object");
     assertEquals(
-      pathItem.post?.tags,
-      ["users", "create"],
-      "Tags should be set correctly",
+      (jsonContent?.schema?.properties?.id as { type: string }).type,
+      "string",
     );
-  });
-
-  await t.step("should add a single tag using addTag method", () => {
-    const endpoint = new EndpointBuilder({
-      method: "get",
-      title: "Get User",
-    });
-
-    endpoint.addTag("users");
-
-    const pathItem = endpoint.getEndpoint();
-
-    assertEquals(
-      pathItem.get?.tags,
-      ["users"],
-      "Single tag should be added correctly",
-    );
-  });
-
-  await t.step("should add multiple tags using addTags method", () => {
-    const endpoint = new EndpointBuilder({
-      method: "delete",
-      title: "Delete User",
-    });
-
-    endpoint.addTags(["users", "delete", "admin"]);
-
-    const pathItem = endpoint.getEndpoint();
-
-    assertEquals(
-      pathItem.delete?.tags,
-      ["users", "delete", "admin"],
-      "Multiple tags should be added correctly",
-    );
-  });
-
-  await t.step("should chain tag methods correctly", () => {
-    const endpoint = new EndpointBuilder({
-      method: "patch",
-      title: "Update User",
-    });
-
-    endpoint
-      .addTag("users")
-      .addTag("update")
-      .addTags(["profile", "admin"]);
-
-    const pathItem = endpoint.getEndpoint();
-
-    assertEquals(
-      pathItem.patch?.tags,
-      ["users", "update", "profile", "admin"],
-      "Tags should be added in the correct order with chained methods",
-    );
-  });
-
-  await t.step("should add tags to previously empty tags array", () => {
-    const endpoint = new EndpointBuilder({
-      method: "put",
-      title: "Replace User",
-    });
-
-    // First call should initialize the tags array
-    endpoint.addTag("users");
-    // Second call should add to the existing array
-    endpoint.addTag("replace");
-
-    const pathItem = endpoint.getEndpoint();
-
-    assertEquals(
-      pathItem.put?.tags,
-      ["users", "replace"],
-      "Tags should be properly initialized and appended",
-    );
-  });
-
-  await t.step("should support different HTTP methods", () => {
-    const methods: ["get", "post", "put", "delete", "patch", "options"] = [
-      "get",
-      "post",
-      "put",
-      "delete",
-      "patch",
-      "options",
-    ];
-
-    for (const method of methods) {
-      const endpoint = new EndpointBuilder({
-        method,
-        title: `${method.toUpperCase()} Operation`,
-      });
-
-      const pathItem = endpoint.getEndpoint();
-
-      assertEquals(
-        pathItem[method]?.summary,
-        `${method.toUpperCase()} Operation`,
-        `${method.toUpperCase()} method should be correctly configured`,
-      );
-    }
-  });
+  }
 });

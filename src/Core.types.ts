@@ -2,7 +2,7 @@ import type { AllowedLicenses } from "./Licenses.types.ts";
 
 type OpenAPIMethods = "POST" | "GET" | "PUT" | "DELETE" | "PATCH" | "OPTIONS";
 
-type LowercasedOpenAPIMethods = Lowercase<OpenAPIMethods>;
+type OpenAPIMethodsLowercase = Lowercase<OpenAPIMethods>;
 
 // Represents the root document object of the OpenAPI specification.
 // https://spec.openapis.org/oas/v3.1.0.html
@@ -16,55 +16,27 @@ type LowercasedOpenAPIMethods = Lowercase<OpenAPIMethods>;
  * @property servers - Array of Server Objects providing connectivity information to target servers.
  * @property paths - Available paths and operations for the API.
  * @property webhooks - Incoming webhooks that may be received as part of the API.
- * @property componenets - Element holding various schemas for the document.
+ * @property components - Element holding various schemas for the document.
  * @property security - Declaration of security mechanisms available across the API.
  * @property tags - List of tags with additional metadata used by the document.
  * @property externalDocs - Additional external documentation.
  *
  * @see https://spec.openapis.org/oas/v3.1.0.html#openapi-object
  */
-type OpenAPIDoc = {
-  openapi: string;
-  info: OpenAPIInfo;
-  jsonSchemaDialect?: JSONSchemaDialect;
-  servers?: OpenAPIServer[];
-  paths?: Record<string, OpenAPIPathItem | OpenAPIReference>;
-  webhooks?: Record<string, OpenAPIPathItem | OpenAPIReference>;
-  components?: OpenAPIComponents;
-  security?: SecurityRequirement[]; // Changed from SecurityRequirement to SecurityRequirement[]
-  tags?: OpenAPITag[];
-  externalDocs?: OpenAPIExternalDocs;
+type OpenAPI = {
+  openapi: string; // supported
+  info: OpenAPIInfo; // supported
+  jsonSchemaDialect?: string; // supported
+  servers?: OpenAPIServer[]; // supported
+  paths?: Record<string, OpenAPIPathItem | OpenAPIReference>; // supported
+  webhooks?: Record<string, OpenAPIPathItem | OpenAPIReference>; // not-supported
+  components?: OpenAPIComponents; // not-supported
+  security?: OpenAPISecurityRequirement[]; // supported
+  tags?: OpenAPITag[]; // supported
+  externalDocs?: OpenAPIExternalDocs; // supported
 };
 
-/**
- * JSON Schema dialects supported by OpenAPI 3.1
- * OpenAPI 3.1 uses JSON Schema 2020-12 by default, but can use other dialects
- */
-type JSONSchemaDialect =
-  | "https://json-schema.org/draft/2020-12/schema" // Default in OpenAPI 3.1
-  | "https://json-schema.org/draft/2019-09/schema"
-  | "https://json-schema.org/draft/07/schema"
-  | "https://json-schema.org/draft-06/schema#"
-  | "https://json-schema.org/draft-04/schema#"
-  | string; // Allow custom dialects
-
-/**
- * JSON Schema Vocabulary configuration for OpenAPI 3.1
- */
-type JSONSchemaVocabulary = {
-  uri: string;
-  description?: string;
-};
-
-/**
- * Represents a Security Requirement Object in OpenAPI specification.
- * The name of each property is a security scheme name, and the value is an array of scope names required.
- * To indicate alternative security requirement objects, use multiple objects in the security array.
- * @example
- * // Single authentication option requiring JWT with "read" and "write" scopes
- * { "jwt": ["read", "write"] }
- */
-type SecurityRequirement = Record<string, string[]>;
+type OpenAPISecurityRequirement = Record<string, string[]>;
 
 /**
  * Represents the OpenAPI Info Object, providing metadata about the API.
@@ -177,26 +149,18 @@ type OpenAPIServerVariable = {
  * @property {Record<string, OpenAPILink>} [links] - Reusable Link Objects.
  * @property {Record<string, OpenAPICallback>} [callbacks] - Reusable Callback Objects.
  * @property {Record<string, OpenAPIPathItem>} [pathItems] - Reusable Path Item Objects.
- * @property {Record<string, OpenAPIPathItem>} [webhooks] - Reusable Webhook Objects.
  */
 type OpenAPIComponents = {
   schemas?: Record<string, OpenAPISchema>;
   responses?: Record<string, OpenAPIResponse | OpenAPIReference>;
   parameters?: Record<string, OpenAPIParameter>;
   examples?: Record<string, OpenAPIExample>;
-  // requestBodies?: Record<string, OpenAPIRequestBody | OpenAPIReference>;
-  requestBodies?: OpenAPIRequestBodyNonDocumented;
+  requestBodies?: Record<string, OpenAPIRequestBody | OpenAPIReference>;
   headers?: Record<string, OpenAPIHeader>;
   securitySchemes?: Record<string, OpenAPISecurityScheme>;
   links?: Record<string, OpenAPILink>;
   callbacks?: Record<string, OpenAPICallback>;
   pathItems?: Record<string, OpenAPIPathItem>;
-  webhooks?: Record<string, OpenAPIPathItem>;
-};
-
-type OpenAPIRequestBodyNonDocumented = {
-  required?: boolean;
-  content?: Record<string, OpenAPIExtenedRequestBodySchema>;
 };
 
 // https://swagger.io/docs/specification/v3_0/data-models/data-types/
@@ -206,16 +170,7 @@ type OpenAPIDataTypes =
   | "integer"
   | "boolean"
   | "array"
-  | "object"
-  | "null"; // Add "null" as a valid data type for JSON Schema 2020-12 compatibility
-
-type OpenAPIExtenedRequestBodySchema = OpenAPIMediaType & {
-  type?: OpenAPIDataTypes;
-  properties?: Record<string, OpenAPIProperty>;
-  examples?: OpenAPIExampleMap;
-  required?: string[]; // Add required fields support
-  schema?: OpenAPIProperty;
-};
+  | "object";
 
 type OpenAPIFormatTypes =
   | "email"
@@ -237,107 +192,56 @@ type OpenAPIFormatTypes =
   | "json-pointer"
   | "relative-json-pointer";
 
-type OpenAPIProperty = {
-  type?: OpenAPIDataTypes;
-  properties?: Record<string, OpenAPIProperty>; // object subFields
-  examples?: (string | number)[];
-  minLength?: number; // for string length
-  maxLength?: number; // for string length
-  format?: OpenAPIFormatTypes;
-  minimum?: number; // for number values
-  maximum?: number; // for number values
-
-  // array
-  items?: OpenAPIProperty;
-  minItems?: number;
-};
-
 /**
- * Represents a schema object in OpenAPI specification.
- * @interface
- * @property {OpenAPIDiscriminator} [discriminator] - Adds support for polymorphism. The discriminator is an object name that is used to differentiate between other schemas.
- * @property {OpenAPIXML} [xml] - Additional metadata to describe the XML representation of this property. Only applicable on properties schemas, not root schemas.
- * @property {OpenAPIExternalDocs} [externalDocs] - Additional external documentation for this schema.
+ * Represents a Schema Object in OpenAPI specification.
+ * @see https://spec.openapis.org/oas/v3.1.0#schema-object
  */
 type OpenAPISchema = {
-  discriminator?: OpenAPIDiscriminator;
-  xml?: OpenAPIXML;
-  externalDocs?: OpenAPIExternalDocs;
-  // @deprecated Deprecated: The example property has been deprecated in favor of the JSON Schema examples keyword. Use of example is discouraged, and later versions of this specification may remove it.
-  // example?: any;
-
-  // JSON Schema 2020-12 supported keywords
-  $schema?: JSONSchemaDialect;
-  $vocabulary?: Record<string, boolean>;
-  $id?: string;
-  $anchor?: string;
-  $dynamicAnchor?: string;
-  $ref?: string;
-  $dynamicRef?: string;
-  $defs?: Record<string, OpenAPISchema>;
-  $comment?: string;
-
-  // Standard JSON Schema type keywords
-  type?: OpenAPIDataTypes | OpenAPIDataTypes[];
-  enum?: unknown[];
-  const?: unknown;
+  // Basic JSON Schema properties
+  type?: OpenAPIDataTypes | string;
+  format?: OpenAPIFormatTypes | string;
+  title?: string;
+  description?: string;
+  // deno-lint-ignore no-explicit-any
+  default?: any;
   multipleOf?: number;
   maximum?: number;
-  exclusiveMaximum?: number;
+  exclusiveMaximum?: boolean | number;
   minimum?: number;
-  exclusiveMinimum?: number;
+  exclusiveMinimum?: boolean | number;
   maxLength?: number;
   minLength?: number;
   pattern?: string;
   maxItems?: number;
   minItems?: number;
   uniqueItems?: boolean;
-  maxContains?: number;
-  minContains?: number;
   maxProperties?: number;
   minProperties?: number;
   required?: string[];
-  dependentRequired?: Record<string, string[]>;
+  // deno-lint-ignore no-explicit-any
+  enum?: any[];
 
-  // Content validation keywords
-  contentEncoding?: string;
-  contentMediaType?: string;
-  contentSchema?: OpenAPISchema;
+  // Type-specific properties
+  items?: OpenAPISchema | OpenAPIReference;
+  properties?: Record<string, OpenAPISchema | OpenAPIReference>;
+  additionalProperties?: boolean | OpenAPISchema | OpenAPIReference;
 
-  // Format assertion keywords
-  format?: string;
-
-  // Structural validation keywords
-  properties?: Record<string, OpenAPISchema>;
-  patternProperties?: Record<string, OpenAPISchema>;
-  additionalProperties?: boolean | OpenAPISchema;
-  propertyNames?: OpenAPISchema;
-  unevaluatedProperties?: boolean | OpenAPISchema;
-
-  // Array validation keywords
-  items?: OpenAPISchema;
-  prefixItems?: OpenAPISchema[];
-  contains?: OpenAPISchema;
-  unevaluatedItems?: boolean | OpenAPISchema;
-
-  // Validation keywords for any instance type
-  allOf?: OpenAPISchema[];
-  anyOf?: OpenAPISchema[];
-  oneOf?: OpenAPISchema[];
-  not?: OpenAPISchema;
-  if?: OpenAPISchema;
-  then?: OpenAPISchema;
-  else?: OpenAPISchema;
-  dependentSchemas?: Record<string, OpenAPISchema>;
-
-  // JSON Schema 2020-12 specific metadata and annotations
-  title?: string;
-  description?: string;
-  default?: unknown;
+  // OpenAPI-specific extensions
+  nullable?: boolean;
   deprecated?: boolean;
   readOnly?: boolean;
   writeOnly?: boolean;
-  examples?: unknown[];
+  // deno-lint-ignore no-explicit-any
+  example?: any;
+  externalDocs?: OpenAPIExternalDocs;
+  discriminator?: OpenAPIDiscriminator;
+  xml?: OpenAPIXML;
+
+  // Composition
+  allOf?: (OpenAPISchema | OpenAPIReference)[];
+  oneOf?: (OpenAPISchema | OpenAPIReference)[];
+  anyOf?: (OpenAPISchema | OpenAPIReference)[];
+  not?: OpenAPISchema | OpenAPIReference;
 };
 
 /**
@@ -413,16 +317,42 @@ type OpenAPIResponse = {
 /**
  * Represents a header in the OpenAPI specification.
  *
- * @property {string} name - REQUIRED. The name of the header.
- * @property {string} [description] - A description for the header. CommonMark syntax MAY be used for rich text representation.
- * @property {OpenAPIExternalDocs} [externalDocs] - Additional external documentation for this header.
+ * @property {string} [description] - A short description of the header. CommonMark syntax may be used for rich text representation.
+ * @property {boolean} [required] - Determines if this header is mandatory. Defaults to false.
+ * @property {boolean} [deprecated] - Indicates if this header should be deprecated. Defaults to false.
+ * @property {boolean} [allowEmptyValue] - Sets the ability to pass empty-valued parameters. Only applicable for query parameters.
+ * Defaults to false.
+ * @property {string} [style] - Describes how the header value will be serialized depending on its type.
+ * Defaults to "simple" for all types except for query parameters.
+ * @property {boolean} [explode] - Determines whether the header value should explode or not. Defaults to false.
+ * Only applicable for query parameters.
+ * @property {boolean} [allowReserved] - Determines whether the header value should allow reserved characters. Defaults to false.
+ * Only applicable for query parameters.
+ * @property {OpenAPISchema | OpenAPIReference | OpenAPIDefaultSchema} [schema] - The schema defining the type used for the header.
+ * Mutually exclusive with content property.
+ * @property {any} [example] - Example of the header. The example object SHOULD be in the correct format as specified by the media type.
+ * Mutually exclusive with examples property. If referencing a schema which contains an example,
+ * this value SHALL override the schema's example.
+ * @property {Record<string, OpenAPIExample | OpenAPIReference>} [examples] - Examples of the header. Each example object SHOULD match the media type and specified schema if present.
+ * Mutually exclusive with example property. If referencing a schema which contains an example,
+ * these values SHALL override the schema's example.
+ * @property {Record<string, OpenAPIMediaType>} [content] - A map of content-type definitions for the header.
  *
  * @see {@link OpenAPIExternalDocs} for external documentation structure
  */
 type OpenAPIHeader = {
-  name: string;
   description?: string;
-  externalDocs?: OpenAPIExternalDocs;
+  required?: boolean;
+  deprecated?: boolean;
+  allowEmptyValue?: boolean;
+  style?: string;
+  explode?: boolean;
+  allowReserved?: boolean;
+  schema?: OpenAPISchema | OpenAPIReference;
+  // deno-lint-ignore no-explicit-any
+  example?: any;
+  examples?: Record<string, OpenAPIExample | OpenAPIReference>;
+  content?: Record<string, OpenAPIMediaType>;
 };
 
 /**
@@ -435,7 +365,7 @@ type OpenAPIHeader = {
  * as specified by the media type. Mutually exclusive with 'examples' field. If referencing a schema which
  * contains an example, this value SHALL override the schema's example.
  *
- * @property {OpenAPIExampleMap} [examples] - Examples of the media type.
+ * @property {Record<string, OpenAPIExample | OpenAPIReference>} [examples] - Examples of the media type.
  * Each example object SHOULD match the media type and specified schema if present. Mutually exclusive with
  * 'example' field. If referencing a schema which contains an example, these values SHALL override the
  * schema's example.
@@ -445,10 +375,10 @@ type OpenAPIHeader = {
  * SHALL only apply to requestBody objects when the media type is multipart or application/x-www-form-urlencoded.
  */
 type OpenAPIMediaType = {
-  schema?: OpenAPISchema | OpenAPIDefaultSchema;
+  schema?: OpenAPISchema;
   // deno-lint-ignore no-explicit-any
   example?: any;
-  examples?: OpenAPIExampleMap;
+  examples?: Record<string, OpenAPIExample | OpenAPIReference>;
   encoding?: Record<string, OpenAPIEncoding>;
 };
 
@@ -468,11 +398,6 @@ type OpenAPIExample = {
   value?: any;
   externalValue?: string;
 };
-
-/**
- * A record of examples in a OpenAPI specification
- */
-type OpenAPIExampleMap = Record<string, OpenAPIExample | OpenAPIReference>;
 
 /**
  * A single encoding definition applied to a single schema property.
@@ -615,7 +540,7 @@ type OpenAPIReference = {
  * @property {any} [example] - Example parameter value matching schema.
  *    Mutually exclusive with examples property.
  *
- * @property {OpenAPIExampleMap} [examples] - Multiple examples.
+ * @property {Record<string, OpenAPIExample | OpenAPIReference>} [examples] - Multiple examples.
  *    Mutually exclusive with example property.
  *
  * @property {Record<string, OpenAPIMediaType>} [content] - Complex parameter media type definition.
@@ -631,10 +556,10 @@ type OpenAPIParameter = {
   style?: string;
   explode?: boolean;
   allowReserved?: boolean;
-  schema?: OpenAPISchema | OpenAPIReference | OpenAPIDefaultSchema;
+  schema?: OpenAPISchema | OpenAPIReference;
   // deno-lint-ignore no-explicit-any
   example?: any;
-  examples?: OpenAPIExampleMap;
+  examples?: Record<string, OpenAPIExample | OpenAPIReference>;
   content?: Record<string, OpenAPIMediaType>;
 };
 
@@ -642,27 +567,6 @@ type OpenAPIParameter = {
  * Represents an OpenAPI Request Body Object.
  */
 type OpenAPIParameterLocation = "query" | "header" | "path" | "cookie";
-
-type OpenAPIDefaultSchema = {
-  type: string;
-  format?: string;
-  description?: string;
-  nullable?: boolean;
-  deprecated?: boolean;
-  enum?: unknown[];
-  default?: unknown;
-  items?: OpenAPIDefaultSchema; // Add items property for arrays
-  properties?: Record<string, OpenAPISchema | OpenAPIDefaultSchema>;
-  required?: string[];
-  minimum?: number; // Add this property for number/integer types
-  maximum?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  minItems?: number;
-  maxItems?: number;
-  uniqueItems?: boolean;
-};
 
 /**
  * The request body applicable for this operation.
@@ -697,15 +601,32 @@ type OpenAPIRequestBody = {
  * @property {string} [openIdConnectUrl] - Required for openIdConnect. OpenId Connect URL to discover OAuth2 configuration values. Must be a valid HTTPS URL.
  */
 type OpenAPISecurityScheme = {
-  type: "apiKey" | "http" | "mutualTLS" | "oauth2" | "openIdConnect";
+  type: OpenAPISecurityTypes;
   description?: string;
   name?: string;
-  in?: "query" | "header" | "cookie";
+  in?: string;
   scheme?: string;
   bearerFormat?: string;
   flows?: OpenAPIOAuthFlows;
   openIdConnectUrl?: string;
 };
+
+/**
+ * Represents the allowed security types in OpenAPI specification.
+ * @see https://spec.openapis.org/oas/v3.1.0#security-scheme-object
+ *
+ * @property {string} apiKey - API key security scheme.
+ * @property {string} http - HTTP authentication scheme.
+ * @property {string} mutualTLS - Mutual TLS authentication scheme.
+ * @property {string} oauth2 - OAuth 2.0 authentication scheme.
+ * @property {string} openIdConnect - OpenID Connect authentication scheme.
+ */
+type OpenAPISecurityTypes =
+  | "apiKey"
+  | "http"
+  | "mutualTLS"
+  | "oauth2"
+  | "openIdConnect";
 
 /**
  * OAuth Flows Object
@@ -817,7 +738,7 @@ type OpenAPIPathItem = {
  * @property {Record<string, OpenAPIResponse | OpenAPIReference>} responses - Possible responses from operation execution.
  * @property {Record<string, OpenAPICallback | OpenAPIReference>} [callbacks] - Map of possible out-of-band callbacks.
  * @property {boolean} [deprecated] - Indicates if operation is deprecated. Defaults to false.
- * @property {SecurityRequirement[]} [security] - Security mechanisms for this operation. Overrides top-level security.
+ * @property {Record<string, string[]>} [security] - Security mechanisms for this operation. Overrides top-level security.
  * @property {OpenAPIServer[]} [servers] - Alternative servers for this operation. Overrides Path Item and Root level servers.
  */
 type OpenAPIOperation = {
@@ -827,11 +748,11 @@ type OpenAPIOperation = {
   externalDocs?: OpenAPIExternalDocs;
   operationId?: string;
   parameters?: (OpenAPIParameter | OpenAPIReference)[];
-  requestBody?: OpenAPIRequestBodyNonDocumented;
-  responses: Record<string, OpenAPIResponse | OpenAPIReference>;
+  requestBody?: OpenAPIRequestBody | OpenAPIReference;
+  responses?: Record<string, OpenAPIResponse | OpenAPIReference>;
   callbacks?: Record<string, OpenAPICallback | OpenAPIReference>;
   deprecated?: boolean;
-  security?: SecurityRequirement[];
+  security?: Record<string, string[]>;
   servers?: OpenAPIServer[];
 };
 
@@ -849,84 +770,15 @@ type OpenAPITag = {
   externalDocs?: OpenAPIExternalDocs;
 };
 
-type OpenAPIYelixDoc = {
-  path: string;
-  method: string;
-} & OpenAPIDoc;
-
-type InitializeOpenAPIParams = {
-  title: string;
-  version: string;
-  description?: string;
-  servers?: OpenAPIServer[];
-};
-
-type OpenAPIParams = {
-  version: string;
-  title: string;
-  description?: string;
-  servers?: OpenAPIServer[];
-};
-
-type AddOpenAPIEndpointResponseParams = {
-  description?: string;
-  type: string; // MIME type
-  zodSchema: /*YelixValidationBase |*/ null;
-};
-
-type NewEndpointParams = {
-  path: string;
-  method: string;
-  title?: string;
-  description?: string;
-  tags?: string[];
-  responses?: Record<string, AddOpenAPIEndpointResponseParams>;
-  validation?: unknown;
-  query?: Record<string, { description: string }>;
-  bodyType?: string; // 'application/json' by default
-};
-
-// deno-lint-ignore no-explicit-any
-type DescribeValidationType = (_: any) => string;
-
-type NewEndpointInformation = {
-  path: string;
-  method: LowercasedOpenAPIMethods;
-  title?: string;
-  description?: string;
-};
-
-/**
- * Options for creating a new webhook
- */
-type WebhookOptions = {
-  summary?: string;
-  description?: string;
-  servers?: OpenAPIServer[];
-  parameters?: (OpenAPIParameter | OpenAPIReference)[];
-  operations?: Record<string, OpenAPIOperation>;
-};
-
 export type {
-  AddOpenAPIEndpointResponseParams,
-  DescribeValidationType,
-  InitializeOpenAPIParams,
-  JSONSchemaDialect,
-  JSONSchemaVocabulary,
-  LowercasedOpenAPIMethods,
-  NewEndpointInformation,
-  NewEndpointParams,
+  OpenAPI,
   OpenAPICallback,
   OpenAPIComponents,
   OpenAPIContact,
   OpenAPIDataTypes,
-  OpenAPIDefaultSchema,
   OpenAPIDiscriminator,
-  OpenAPIDoc,
   OpenAPIEncoding,
   OpenAPIExample,
-  OpenAPIExampleMap,
-  OpenAPIExtenedRequestBodySchema,
   OpenAPIExternalDocs,
   OpenAPIHeader,
   OpenAPIInfo,
@@ -934,27 +786,24 @@ export type {
   OpenAPILink,
   OpenAPIMediaType,
   OpenAPIMethods,
+  OpenAPIMethodsLowercase,
   OpenAPIOAuthFlow,
   OpenAPIOAuthFlows,
   OpenAPIOperation,
   OpenAPIParameter,
   OpenAPIParameterLocation,
-  OpenAPIParams,
   OpenAPIPathItem,
-  OpenAPIProperty,
   OpenAPIReference,
   OpenAPIRequestBody,
-  OpenAPIRequestBodyNonDocumented,
   OpenAPIResponse,
   OpenAPISchema,
+  OpenAPISecurityRequirement,
   OpenAPISecurityScheme,
+  OpenAPISecurityTypes,
   OpenAPIServer,
   OpenAPIServerVariable,
   OpenAPITag,
   OpenAPIXML,
-  OpenAPIYelixDoc,
   RuntimeExpression,
   RuntimeExpressionOrValue,
-  SecurityRequirement,
-  WebhookOptions,
 };
