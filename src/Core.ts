@@ -1,5 +1,5 @@
 import type {
-  OpenAPI as OpenAPI_3_1,
+  OpenAPICore,
   OpenAPISecurityRequirement,
   OpenAPITag,
 } from './Core.types.ts';
@@ -8,7 +8,7 @@ import { createEndpointPath, type EndpointPath } from './EndpointPath.ts';
 import type { AllowedLicenses } from './Licenses.types.ts';
 
 class OpenAPI {
-  private raw: OpenAPI_3_1;
+  private raw: OpenAPICore;
 
   constructor() {
     this.raw = {
@@ -20,7 +20,7 @@ class OpenAPI {
     };
   }
 
-  getJSON() {
+  getJSON(): OpenAPICore {
     return this.raw;
   }
 
@@ -80,7 +80,7 @@ class OpenAPI {
     return this;
   }
 
-  addEndpointPath(endpointPath: EndpointPath) {
+  addEndpointPath(endpointPath: EndpointPath): this {
     if (!this.raw.paths) {
       this.raw.paths = {};
     }

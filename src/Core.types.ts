@@ -23,7 +23,7 @@ type OpenAPIMethodsLowercase = Lowercase<OpenAPIMethods>;
  *
  * @see https://spec.openapis.org/oas/v3.1.0.html#openapi-object
  */
-type OpenAPI = {
+type OpenAPICore = {
   openapi: string; // supported
   info: OpenAPIInfo; // supported
   jsonSchemaDialect?: string; // supported
@@ -771,7 +771,7 @@ type OpenAPITag = {
 };
 
 export type {
-  OpenAPI,
+  OpenAPICore,
   OpenAPICallback,
   OpenAPIComponents,
   OpenAPIContact,
