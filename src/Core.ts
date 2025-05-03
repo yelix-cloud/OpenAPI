@@ -2,20 +2,20 @@ import type {
   OpenAPI as OpenAPI_3_1,
   OpenAPISecurityRequirement,
   OpenAPITag,
-} from "./Core.types.ts";
-import { createEndpointBuilder } from "./EndpointBuilder.ts";
-import { createEndpointPath, type EndpointPath } from "./EndpointPath.ts";
-import type { AllowedLicenses } from "./Licenses.types.ts";
+} from './Core.types.ts';
+import { createEndpointBuilder } from './EndpointBuilder.ts';
+import { createEndpointPath, type EndpointPath } from './EndpointPath.ts';
+import type { AllowedLicenses } from './Licenses.types.ts';
 
 class OpenAPI {
   private raw: OpenAPI_3_1;
 
   constructor() {
     this.raw = {
-      openapi: "3.1.0",
+      openapi: '3.1.0',
       info: {
-        title: "OpenAPI 3.1.0",
-        version: "1.0.0",
+        title: 'OpenAPI 3.1.0',
+        version: '1.0.0',
       },
     };
   }
@@ -63,19 +63,19 @@ class OpenAPI {
   }
 
   setLicenseName(name: string): this {
-    this.raw.info.license = this.raw.info.license || { name: "" };
+    this.raw.info.license = this.raw.info.license || { name: '' };
     this.raw.info.license.name = name;
     return this;
   }
 
   setLicenseUrl(url: string): this {
-    this.raw.info.license = this.raw.info.license || { name: "" };
+    this.raw.info.license = this.raw.info.license || { name: '' };
     this.raw.info.license.url = url;
     return this;
   }
 
   setLicenseIdentifier(identifier: AllowedLicenses): this {
-    this.raw.info.license = this.raw.info.license || { name: "" };
+    this.raw.info.license = this.raw.info.license || { name: '' };
     this.raw.info.license.identifier = identifier;
     return this;
   }
@@ -104,7 +104,7 @@ class OpenAPI {
   }
 
   setSecurity(scheme: {
-    type: "apiKey" | "http" | "oauth2" | "openIdConnect";
+    type: 'apiKey' | 'http' | 'oauth2' | 'openIdConnect';
     name: string;
     scopes?: string[];
   }): this {
@@ -153,83 +153,83 @@ class OpenAPI {
   }
 }
 
-export { OpenAPI };
+export { OpenAPI, createEndpointPath, createEndpointBuilder };
 
-const openAPI = new OpenAPI();
+// const openAPI = new OpenAPI();
 
-openAPI
-  .setTitle("My API")
-  .setVersion("1.0.0")
-  .setDescription("This is my API")
-  .setTermsOfService("https://example.com/terms")
-  .setContactName("John Doe")
-  .setContactUrl("https://example.com/contact")
-  .setContactEmail("john@gmail.com")
-  .addEndpointPath(
-    createEndpointPath("/users/{userId}")
-      .setSummary("Process group of users")
-      .setDescription("This endpoint processes a group of users")
-      .setParameter("userId", "path", true, "The ID of the user")
-      .addEndpoint(
-        createEndpointBuilder("get")
-          .setOperationId("getUser")
-          .setSummary("Get user by ID")
-          .setDescription("This endpoint retrieves a user by ID")
-          .setTags(["User"])
-          .setExternalDocs("https://example.com/docs", "API Documentation")
-          .setSecurity({ apiKey: [] })
-          .setParameter("userId", "path", true, "The ID of the user")
-          .setRequestBody(
-            {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  properties: {
-                    name: { type: "string" },
-                    age: { type: "integer" },
-                  },
-                },
-              },
-            },
-            true,
-          )
-          .setResponses({
-            200: {
-              description: "User retrieved successfully",
-              content: {
-                "application/json": {
-                  schema: {
-                    type: "object",
-                    properties: {
-                      id: { type: "string" },
-                      name: { type: "string" },
-                      age: { type: "integer" },
-                    },
-                  },
-                },
-              },
-            },
-            404: {
-              description: "User not found",
-            },
-          }),
-      )
-      .addEndpoint(
-        createEndpointBuilder("delete")
-          .setOperationId("deleteUser")
-          .setSummary("Delete user by ID")
-          .setDescription("This endpoint deletes a user by ID")
-          .setTags(["User"])
-          .setExternalDocs("https://example.com/docs", "API Documentation")
-          .setSecurity({ apiKey: [] })
-          .setParameter("userId", "path", true, "The ID of the user")
-          .setResponses({
-            204: {
-              description: "User deleted successfully",
-            },
-            404: {
-              description: "User not found",
-            },
-          }),
-      ),
-  );
+// openAPI
+//   .setTitle('My API')
+//   .setVersion('1.0.0')
+//   .setDescription('This is my API')
+//   .setTermsOfService('https://example.com/terms')
+//   .setContactName('John Doe')
+//   .setContactUrl('https://example.com/contact')
+//   .setContactEmail('john@gmail.com')
+//   .addEndpointPath(
+//     createEndpointPath('/users/{userId}')
+//       .setSummary('Process group of users')
+//       .setDescription('This endpoint processes a group of users')
+//       .setParameter('userId', 'path', true, 'The ID of the user')
+//       .addEndpoint(
+//         createEndpointBuilder('get')
+//           .setOperationId('getUser')
+//           .setSummary('Get user by ID')
+//           .setDescription('This endpoint retrieves a user by ID')
+//           .setTags(['User'])
+//           .setExternalDocs('https://example.com/docs', 'API Documentation')
+//           .setSecurity({ apiKey: [] })
+//           .setParameter('userId', 'path', true, 'The ID of the user')
+//           .setRequestBody(
+//             {
+//               'application/json': {
+//                 schema: {
+//                   type: 'object',
+//                   properties: {
+//                     name: { type: 'string' },
+//                     age: { type: 'integer' },
+//                   },
+//                 },
+//               },
+//             },
+//             true
+//           )
+//           .setResponses({
+//             200: {
+//               description: 'User retrieved successfully',
+//               content: {
+//                 'application/json': {
+//                   schema: {
+//                     type: 'object',
+//                     properties: {
+//                       id: { type: 'string' },
+//                       name: { type: 'string' },
+//                       age: { type: 'integer' },
+//                     },
+//                   },
+//                 },
+//               },
+//             },
+//             404: {
+//               description: 'User not found',
+//             },
+//           })
+//       )
+//       .addEndpoint(
+//         createEndpointBuilder('delete')
+//           .setOperationId('deleteUser')
+//           .setSummary('Delete user by ID')
+//           .setDescription('This endpoint deletes a user by ID')
+//           .setTags(['User'])
+//           .setExternalDocs('https://example.com/docs', 'API Documentation')
+//           .setSecurity({ apiKey: [] })
+//           .setParameter('userId', 'path', true, 'The ID of the user')
+//           .setResponses({
+//             204: {
+//               description: 'User deleted successfully',
+//             },
+//             404: {
+//               description: 'User not found',
+//             },
+//           })
+//       )
+//   );
