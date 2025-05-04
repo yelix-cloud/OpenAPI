@@ -47,13 +47,15 @@ class EndpointPath {
   }
 
   addEndpoint(builder: EndpointBuilder): this {
-    if (this.pathItem[builder.method]) {
+    if (this.pathItem[builder.method as keyof OpenAPIPathItem]) {
       console.warn(
         `Endpoint with method ${builder.method} already exists for path ${this.path}, Overwriting it.`,
       );
     }
 
-    this.pathItem[builder.method] = builder.operation;
+    // deno-lint-ignore no-explicit-any
+    this.pathItem[builder.method as keyof OpenAPIPathItem] = builder
+      .operation as any;
     return this;
   }
 }

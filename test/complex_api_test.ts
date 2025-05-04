@@ -63,7 +63,9 @@ Deno.test("Complex API with multiple paths and methods", () => {
 
   // Store paths in variables with type assertions to avoid repeated null checks
   const paths = raw.paths!;
+  // deno-lint-ignore no-explicit-any
   const postsPath = paths["/posts"] as any;
+  // deno-lint-ignore no-explicit-any
   const postIdPath = paths["/posts/{postId}"] as any;
 
   // Test methods on first path

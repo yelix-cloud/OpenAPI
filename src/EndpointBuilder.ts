@@ -1,14 +1,13 @@
 import type {
-  OpenAPIMethodsLowercase,
   OpenAPIOperation,
   OpenAPIParameterLocation,
 } from "./Core.types.ts";
 
 class EndpointBuilder {
-  method: OpenAPIMethodsLowercase;
+  method: string;
   operation: OpenAPIOperation;
 
-  constructor(method: OpenAPIMethodsLowercase) {
+  constructor(method: string) {
     this.method = method;
     this.operation = {} as OpenAPIOperation;
   }
@@ -107,7 +106,7 @@ class EndpointBuilder {
 }
 
 function createEndpointBuilder(
-  method: OpenAPIMethodsLowercase,
+  method: string,
 ): EndpointBuilder {
   return new EndpointBuilder(method);
 }

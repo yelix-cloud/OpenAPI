@@ -771,10 +771,10 @@ type OpenAPITag = {
 };
 
 export type {
-  OpenAPICore,
   OpenAPICallback,
   OpenAPIComponents,
   OpenAPIContact,
+  OpenAPICore,
   OpenAPIDataTypes,
   OpenAPIDiscriminator,
   OpenAPIEncoding,

@@ -2,20 +2,20 @@ import type {
   OpenAPICore,
   OpenAPISecurityRequirement,
   OpenAPITag,
-} from './Core.types.ts';
-import { createEndpointBuilder } from './EndpointBuilder.ts';
-import { createEndpointPath, type EndpointPath } from './EndpointPath.ts';
-import type { AllowedLicenses } from './Licenses.types.ts';
+} from "./Core.types.ts";
+import { createEndpointBuilder } from "./EndpointBuilder.ts";
+import { createEndpointPath, type EndpointPath } from "./EndpointPath.ts";
+import type { AllowedLicenses } from "./Licenses.types.ts";
 
 class OpenAPI {
   private raw: OpenAPICore;
 
   constructor() {
     this.raw = {
-      openapi: '3.1.0',
+      openapi: "3.1.0",
       info: {
-        title: 'OpenAPI 3.1.0',
-        version: '1.0.0',
+        title: "OpenAPI 3.1.0",
+        version: "1.0.0",
       },
     };
   }
@@ -63,19 +63,19 @@ class OpenAPI {
   }
 
   setLicenseName(name: string): this {
-    this.raw.info.license = this.raw.info.license || { name: '' };
+    this.raw.info.license = this.raw.info.license || { name: "" };
     this.raw.info.license.name = name;
     return this;
   }
 
   setLicenseUrl(url: string): this {
-    this.raw.info.license = this.raw.info.license || { name: '' };
+    this.raw.info.license = this.raw.info.license || { name: "" };
     this.raw.info.license.url = url;
     return this;
   }
 
   setLicenseIdentifier(identifier: AllowedLicenses): this {
-    this.raw.info.license = this.raw.info.license || { name: '' };
+    this.raw.info.license = this.raw.info.license || { name: "" };
     this.raw.info.license.identifier = identifier;
     return this;
   }
@@ -104,7 +104,7 @@ class OpenAPI {
   }
 
   setSecurity(scheme: {
-    type: 'apiKey' | 'http' | 'oauth2' | 'openIdConnect';
+    type: "apiKey" | "http" | "oauth2" | "openIdConnect";
     name: string;
     scopes?: string[];
   }): this {
@@ -153,7 +153,7 @@ class OpenAPI {
   }
 }
 
-export { OpenAPI, createEndpointPath, createEndpointBuilder };
+export { createEndpointBuilder, createEndpointPath, OpenAPI };
 
 // const openAPI = new OpenAPI();
 
