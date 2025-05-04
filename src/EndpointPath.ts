@@ -53,8 +53,8 @@ class EndpointPath {
       );
     }
 
-    // deno-lint-ignore no-explicit-any
     this.pathItem[builder.method as keyof OpenAPIPathItem] = builder
+      // deno-lint-ignore no-explicit-any
       .operation as any;
     return this;
   }

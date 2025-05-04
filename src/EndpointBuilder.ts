@@ -5,11 +5,23 @@ import type {
 
 class EndpointBuilder {
   method: string;
+  path: string;
   operation: OpenAPIOperation;
 
-  constructor(method: string) {
-    this.method = method;
+  constructor(method?: string) {
+    this.method = method || "";
+    this.path = "";
     this.operation = {} as OpenAPIOperation;
+  }
+
+  setMethod(method: string): this {
+    this.method = method.toLowerCase();
+    return this;
+  }
+
+  setPath(path: string): this {
+    this.path = path;
+    return this;
   }
 
   setOperationId(operationId: string): this {
@@ -106,7 +118,7 @@ class EndpointBuilder {
 }
 
 function createEndpointBuilder(
-  method: string,
+  method?: string,
 ): EndpointBuilder {
   return new EndpointBuilder(method);
 }

@@ -1,27 +1,71 @@
 import type {
   OpenAPICore,
+  OpenAPIPathItem,
   OpenAPISecurityRequirement,
   OpenAPITag,
-} from "./Core.types.ts";
-import { createEndpointBuilder } from "./EndpointBuilder.ts";
-import { createEndpointPath, type EndpointPath } from "./EndpointPath.ts";
-import type { AllowedLicenses } from "./Licenses.types.ts";
+} from './Core.types.ts';
+import { createEndpointBuilder, EndpointBuilder } from './EndpointBuilder.ts';
+import { createEndpointPath, type EndpointPath } from './EndpointPath.ts';
+import type { AllowedLicenses } from './Licenses.types.ts';
 
 class OpenAPI {
   private raw: OpenAPICore;
+  private endpoints: EndpointBuilder[];
 
   constructor() {
     this.raw = {
-      openapi: "3.1.0",
+      openapi: '3.1.0',
       info: {
-        title: "OpenAPI 3.1.0",
-        version: "1.0.0",
+        title: 'OpenAPI 3.1.0',
+        version: '1.0.0',
       },
     };
+    this.endpoints = [];
   }
 
   getJSON(): OpenAPICore {
-    return this.raw;
+    // Create a deep copy of the raw object
+    const result = JSON.parse(JSON.stringify(this.raw)) as OpenAPICore;
+
+    // Process and group endpoints by path
+    if (this.endpoints.length > 0) {
+      if (!result.paths) {
+        result.paths = {};
+      }
+
+      for (const endpoint of this.endpoints) {
+        if (!endpoint.path || !endpoint.method) {
+          console.warn(
+            'Endpoint is missing path or method, skipping',
+            endpoint
+          );
+          continue;
+        }
+
+        if (!result.paths[endpoint.path]) {
+          result.paths[endpoint.path] = {} as OpenAPIPathItem;
+        }
+
+        const pathItem = result.paths[endpoint.path] as OpenAPIPathItem;
+        pathItem[endpoint.method as keyof OpenAPIPathItem] =
+          // deno-lint-ignore no-explicit-any
+          endpoint.operation as any;
+      }
+    }
+
+    return result;
+  }
+
+  // Add an array of endpoints
+  addEndpoints(endpoints: EndpointBuilder[]): this {
+    this.endpoints.push(...endpoints);
+    return this;
+  }
+
+  // Add a single endpoint
+  addEndpoint(endpoint: EndpointBuilder): this {
+    this.endpoints.push(endpoint);
+    return this;
   }
 
   setTitle(title: string): this {
@@ -63,19 +107,19 @@ class OpenAPI {
   }
 
   setLicenseName(name: string): this {
-    this.raw.info.license = this.raw.info.license || { name: "" };
+    this.raw.info.license = this.raw.info.license || { name: '' };
     this.raw.info.license.name = name;
     return this;
   }
 
   setLicenseUrl(url: string): this {
-    this.raw.info.license = this.raw.info.license || { name: "" };
+    this.raw.info.license = this.raw.info.license || { name: '' };
     this.raw.info.license.url = url;
     return this;
   }
 
   setLicenseIdentifier(identifier: AllowedLicenses): this {
-    this.raw.info.license = this.raw.info.license || { name: "" };
+    this.raw.info.license = this.raw.info.license || { name: '' };
     this.raw.info.license.identifier = identifier;
     return this;
   }
@@ -104,7 +148,7 @@ class OpenAPI {
   }
 
   setSecurity(scheme: {
-    type: "apiKey" | "http" | "oauth2" | "openIdConnect";
+    type: 'apiKey' | 'http' | 'oauth2' | 'openIdConnect';
     name: string;
     scopes?: string[];
   }): this {
@@ -157,6 +201,7 @@ export { createEndpointBuilder, createEndpointPath, OpenAPI };
 
 // const openAPI = new OpenAPI();
 
+// // OLD USAGE
 // openAPI
 //   .setTitle('My API')
 //   .setVersion('1.0.0')
@@ -233,3 +278,30 @@ export { createEndpointBuilder, createEndpointPath, OpenAPI };
 //           })
 //       )
 //   );
+
+// // NEW USAGE
+// const endpoint1 = createEndpointBuilder()
+//   .setMethod('get')
+//   .setPath('/tasks')
+//   .setSummary('Get Tasks');
+
+// const endpoint2 = createEndpointBuilder()
+//   .setMethod('post')
+//   .setPath('/tasks')
+//   .setSummary('Create Task')
+//   .setRequestBody(
+//     {
+//       'application/json': {
+//         schema: {
+//           type: 'object',
+//           properties: {
+//             title: { type: 'string' },
+//             completed: { type: 'boolean' },
+//           },
+//         },
+//       },
+//     },
+//     true
+//   );
+
+// openAPI.addEndpoints([endpoint1, endpoint2]);
