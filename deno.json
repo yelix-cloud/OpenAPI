@@ -1,7 +1,7 @@
 {
   "name": "@murat/openapi",
   "exports": "./mod.ts",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "tasks": {
     "lint": "deno lint",
     "test": "deno test --allow-all",
