@@ -1,6 +1,8 @@
 import type {
   OpenAPIOperation,
+  OpenAPIParameter,
   OpenAPIParameterLocation,
+  OpenAPIRequestBody,
 } from "./Core.types.ts";
 
 class EndpointBuilder {
@@ -113,6 +115,21 @@ class EndpointBuilder {
 
   setServers(servers: { url: string; description?: string }[]): this {
     this.operation.servers = servers;
+    return this;
+  }
+
+  // deno-lint-ignore no-explicit-any
+  setRawRequestBodyContent(obj: any): this {
+    (this.operation.requestBody as OpenAPIRequestBody).required = true;
+    (this.operation.requestBody as OpenAPIRequestBody).content = obj;
+    return this;
+  }
+
+  addRawParameter(obj: OpenAPIParameter ): this {
+    if (!this.operation.parameters) {
+      this.operation.parameters = [];
+    }
+    this.operation.parameters.push(obj);
     return this;
   }
 }
