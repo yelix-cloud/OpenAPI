@@ -120,6 +120,10 @@ class EndpointBuilder {
 
   // deno-lint-ignore no-explicit-any
   setRawRequestBodyContent(obj: any): this {
+    if (!this.operation.requestBody) {
+      this.operation.requestBody = {} as OpenAPIRequestBody;
+    }
+
     (this.operation.requestBody as OpenAPIRequestBody).required = true;
     (this.operation.requestBody as OpenAPIRequestBody).content = obj;
     return this;
