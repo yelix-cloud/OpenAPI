@@ -199,7 +199,17 @@ class OpenAPI {
 
   addSecuritySchema(
     name: string,
-    schema: { type: OpenAPISecurityTypes; schema: string; description?: string }
+    scheme: { 
+      type: OpenAPISecurityTypes; 
+      scheme?: string;  // Correct property for HTTP auth
+      bearerFormat?: string; // For JWT format specification
+      name?: string; // For apiKey type
+      in?: string; // For apiKey type
+      openIdConnectUrl?: string; // For openIdConnect type
+      // deno-lint-ignore no-explicit-any
+      flows?: Record<string, any>; // For oauth2 type
+      description?: string;
+    }
   ): this {
     if (!this.raw.components) {
       this.raw.components = { securitySchemes: {} };
@@ -207,7 +217,7 @@ class OpenAPI {
     if (!this.raw.components.securitySchemes) {
       this.raw.components.securitySchemes = {};
     }
-    this.raw.components.securitySchemes[name] = schema;
+    this.raw.components.securitySchemes[name] = scheme;
     return this;
   }
 }
