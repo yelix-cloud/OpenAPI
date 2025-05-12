@@ -27,16 +27,32 @@ class OpenAPI {
     };
     this.endpoints = [];
     this.debug = debug;
+
+    if (debug) {
+      this.log('info', 'OpenAPI instance created with debug mode enabled');
+    }
   }
 
-  private log(level: string, message: string): void {
+  // deno-lint-ignore no-explicit-any
+  private log(level: string, message: string, meta?: any): void {
     if (this.debug) {
-      console.log(`@murat/openapi [${level}] ${message}`);
+      const timestamp = new Date().toISOString();
+      const prefix = `@murat/openapi [${timestamp}] [${level.toUpperCase()}]`;
+
+      if (meta) {
+        console.log(`${prefix} ${message}`, meta);
+      } else {
+        console.log(`${prefix} ${message}`);
+      }
     }
   }
 
   getJSON(): OpenAPICore {
-    this.log('info', 'Generating OpenAPI JSON');
+    this.log('info', 'Generating OpenAPI JSON', {
+      endpointCount: this.endpoints.length,
+      paths: this.raw.paths ? Object.keys(this.raw.paths).length : 0,
+    });
+
     // Create a deep copy of the raw object
     const result = JSON.parse(JSON.stringify(this.raw)) as OpenAPICore;
 
@@ -48,10 +64,7 @@ class OpenAPI {
 
       for (const endpoint of this.endpoints) {
         if (!endpoint.path || !endpoint.method) {
-          console.warn(
-            'Endpoint is missing path or method, skipping',
-            endpoint
-          );
+          this.log('error', 'Endpoint is missing path or method, skipping', endpoint);
           continue;
         }
 
@@ -71,7 +84,9 @@ class OpenAPI {
 
   // Add an array of endpoints
   addEndpoints(endpoints: EndpointBuilder[]): this {
-    this.log('info', `Adding ${endpoints.length} endpoints`);
+    this.log('info', `Adding ${endpoints.length} endpoints`, { 
+      endpoints: endpoints.map(e => `${e.method || 'unknown'} ${e.path || 'unknown'}`) 
+    });
     endpoints.forEach(this.addEndpoint.bind(this));
     return this;
   }
@@ -79,7 +94,13 @@ class OpenAPI {
   // Add a single endpoint
   addEndpoint(endpoint: EndpointBuilder): this {
     this.endpoints.push(endpoint);
-    this.log('info', `Endpoint added: ${endpoint.method} ${endpoint.path}`);
+    this.log('info', `Endpoint added: ${endpoint.method} ${endpoint.path}`, {
+      operationId: endpoint.operation?.operationId,
+      tags: endpoint.operation?.tags,
+      hasParameters: (endpoint.operation?.parameters ?? []).length > 0,
+      hasRequestBody: !!endpoint.operation?.requestBody,
+      responseStatusCodes: endpoint.operation?.responses ? Object.keys(endpoint.operation.responses) : []
+    });
 
     return this;
   }
@@ -151,13 +172,20 @@ class OpenAPI {
   }
 
   addEndpointPath(endpointPath: EndpointPath): this {
-    this.log('info', `Adding endpoint path: ${endpointPath.path}`);
+    this.log('info', `Adding endpoint path: ${endpointPath.path}`, {
+      operations: Object.keys(endpointPath.pathItem),
+      parameters: endpointPath.pathItem.parameters?.length
+    });
+    
     if (!this.raw.paths) {
       this.raw.paths = {};
     }
 
     if (this.raw.paths[endpointPath.path]) {
-      this.log('warn', `Path ${endpointPath.path} already exists, overwriting it`);
+      this.log('warn', `Path ${endpointPath.path} already exists, overwriting it`, {
+        existingOperations: Object.keys(this.raw.paths[endpointPath.path]),
+        newOperations: Object.keys(endpointPath.pathItem)
+      });
     }
 
     this.raw.paths[endpointPath.path] = endpointPath.pathItem;
@@ -181,7 +209,10 @@ class OpenAPI {
     name: string;
     scopes?: string[];
   }): this {
-    this.log('info', `Setting security scheme: ${scheme.name} (${scheme.type})`);
+    this.log(
+      'info',
+      `Setting security scheme: ${scheme.name} (${scheme.type})`
+    );
     if (!this.raw.security) {
       this.raw.security = [] as never;
     }
@@ -243,7 +274,14 @@ class OpenAPI {
       description?: string;
     }
   ): this {
-    this.log('info', `Adding security schema: ${name} (${scheme.type})`);
+    this.log('info', `Adding security schema: ${name} (${scheme.type})`, {
+      scheme: scheme.scheme,
+      bearerFormat: scheme.bearerFormat,
+      apiKeyName: scheme.name,
+      apiKeyIn: scheme.in,
+      hasFlows: !!scheme.flows
+    });
+    
     if (!this.raw.components) {
       this.raw.components = { securitySchemes: {} };
     }
