@@ -4,30 +4,39 @@ import type {
   OpenAPISecurityRequirement,
   OpenAPISecurityTypes,
   OpenAPITag,
-} from "./Core.types.ts";
+} from './Core.types.ts';
 import {
   createEndpointBuilder,
   type EndpointBuilder,
-} from "./EndpointBuilder.ts";
-import { createEndpointPath, type EndpointPath } from "./EndpointPath.ts";
-import type { AllowedLicenses } from "./Licenses.types.ts";
+} from './EndpointBuilder.ts';
+import { createEndpointPath, type EndpointPath } from './EndpointPath.ts';
+import type { AllowedLicenses } from './Licenses.types.ts';
 
 class OpenAPI {
   private raw: OpenAPICore;
   private endpoints: EndpointBuilder[];
+  private debug: boolean;
 
-  constructor() {
+  constructor({ debug = false }: { debug?: boolean } = {}) {
     this.raw = {
-      openapi: "3.1.0",
+      openapi: '3.1.0',
       info: {
-        title: "OpenAPI 3.1.0",
-        version: "1.0.0",
+        title: 'OpenAPI 3.1.0',
+        version: '1.0.0',
       },
     };
     this.endpoints = [];
+    this.debug = debug;
+  }
+
+  private log(level: string, message: string): void {
+    if (this.debug) {
+      console.log(`@murat/openapi [${level}] ${message}`);
+    }
   }
 
   getJSON(): OpenAPICore {
+    this.log('info', 'Generating OpenAPI JSON');
     // Create a deep copy of the raw object
     const result = JSON.parse(JSON.stringify(this.raw)) as OpenAPICore;
 
@@ -40,8 +49,8 @@ class OpenAPI {
       for (const endpoint of this.endpoints) {
         if (!endpoint.path || !endpoint.method) {
           console.warn(
-            "Endpoint is missing path or method, skipping",
-            endpoint,
+            'Endpoint is missing path or method, skipping',
+            endpoint
           );
           continue;
         }
@@ -62,79 +71,93 @@ class OpenAPI {
 
   // Add an array of endpoints
   addEndpoints(endpoints: EndpointBuilder[]): this {
-    this.endpoints.push(...endpoints);
+    this.log('info', `Adding ${endpoints.length} endpoints`);
+    endpoints.forEach(this.addEndpoint.bind(this));
     return this;
   }
 
   // Add a single endpoint
   addEndpoint(endpoint: EndpointBuilder): this {
     this.endpoints.push(endpoint);
+    this.log('info', `Endpoint added: ${endpoint.method} ${endpoint.path}`);
+
     return this;
   }
 
   setTitle(title: string): this {
+    this.log('info', `Setting title: ${title}`);
     this.raw.info.title = title;
     return this;
   }
 
   setVersion(version: string): this {
+    this.log('info', `Setting version: ${version}`);
     this.raw.info.version = version;
     return this;
   }
 
   setDescription(description: string): this {
+    this.log('info', `Setting description`);
     this.raw.info.description = description;
     return this;
   }
 
   setTermsOfService(termsOfService: string): this {
+    this.log('info', `Setting terms of service: ${termsOfService}`);
     this.raw.info.termsOfService = termsOfService;
     return this;
   }
 
   setContactName(name: string): this {
+    this.log('info', `Setting contact name: ${name}`);
     this.raw.info.contact = this.raw.info.contact || {};
     this.raw.info.contact.name = name;
     return this;
   }
 
   setContactUrl(url: string): this {
+    this.log('info', `Setting contact URL: ${url}`);
     this.raw.info.contact = this.raw.info.contact || {};
     this.raw.info.contact.url = url;
     return this;
   }
 
   setContactEmail(email: string): this {
+    this.log('info', `Setting contact email: ${email}`);
     this.raw.info.contact = this.raw.info.contact || {};
     this.raw.info.contact.email = email;
     return this;
   }
 
   setLicenseName(name: string): this {
-    this.raw.info.license = this.raw.info.license || { name: "" };
+    this.log('info', `Setting license name: ${name}`);
+    this.raw.info.license = this.raw.info.license || { name: '' };
     this.raw.info.license.name = name;
     return this;
   }
 
   setLicenseUrl(url: string): this {
-    this.raw.info.license = this.raw.info.license || { name: "" };
+    this.log('info', `Setting license URL: ${url}`);
+    this.raw.info.license = this.raw.info.license || { name: '' };
     this.raw.info.license.url = url;
     return this;
   }
 
   setLicenseIdentifier(identifier: AllowedLicenses): this {
-    this.raw.info.license = this.raw.info.license || { name: "" };
+    this.log('info', `Setting license identifier: ${identifier}`);
+    this.raw.info.license = this.raw.info.license || { name: '' };
     this.raw.info.license.identifier = identifier;
     return this;
   }
 
   addEndpointPath(endpointPath: EndpointPath): this {
+    this.log('info', `Adding endpoint path: ${endpointPath.path}`);
     if (!this.raw.paths) {
       this.raw.paths = {};
     }
 
     if (this.raw.paths[endpointPath.path]) {
-      console.warn(`Path ${endpointPath.path} already exists, Overwriting it.`);
+      this.log('warn', `Path ${endpointPath.path} already exists, overwriting it`);
     }
 
     this.raw.paths[endpointPath.path] = endpointPath.pathItem;
@@ -142,20 +165,23 @@ class OpenAPI {
   }
 
   setJsonSchemaDialect(dialect: string): this {
+    this.log('info', `Setting JSON schema dialect: ${dialect}`);
     this.raw.jsonSchemaDialect = dialect;
     return this;
   }
 
   setServers(servers: { url: string; description?: string }[]): this {
+    this.log('info', `Setting ${servers.length} servers`);
     this.raw.servers = servers;
     return this;
   }
 
   setSecurity(scheme: {
-    type: "apiKey" | "http" | "oauth2" | "openIdConnect";
+    type: 'apiKey' | 'http' | 'oauth2' | 'openIdConnect';
     name: string;
     scopes?: string[];
   }): this {
+    this.log('info', `Setting security scheme: ${scheme.name} (${scheme.type})`);
     if (!this.raw.security) {
       this.raw.security = [] as never;
     }
@@ -169,6 +195,7 @@ class OpenAPI {
   }
 
   setTag(name: string, description?: string): this {
+    this.log('info', `Adding tag: ${name}`);
     if (!this.raw.tags) {
       this.raw.tags = [];
     }
@@ -183,6 +210,7 @@ class OpenAPI {
   }
 
   setTags(tags: string[]): this {
+    this.log('info', `Adding ${tags.length} tags`);
     if (!this.raw.tags) {
       this.raw.tags = [];
     }
@@ -193,6 +221,7 @@ class OpenAPI {
   }
 
   setExternalDocs(url: string, description?: string): this {
+    this.log('info', `Setting external docs: ${url}`);
     this.raw.externalDocs = {
       url,
       description,
@@ -204,16 +233,17 @@ class OpenAPI {
     name: string,
     scheme: {
       type: OpenAPISecurityTypes;
-      scheme?: string; // Correct property for HTTP auth
-      bearerFormat?: string; // For JWT format specification
-      name?: string; // For apiKey type
-      in?: string; // For apiKey type
-      openIdConnectUrl?: string; // For openIdConnect type
+      scheme?: string;
+      bearerFormat?: string;
+      name?: string;
+      in?: string;
+      openIdConnectUrl?: string;
       // deno-lint-ignore no-explicit-any
-      flows?: Record<string, any>; // For oauth2 type
+      flows?: Record<string, any>;
       description?: string;
-    },
+    }
   ): this {
+    this.log('info', `Adding security schema: ${name} (${scheme.type})`);
     if (!this.raw.components) {
       this.raw.components = { securitySchemes: {} };
     }
