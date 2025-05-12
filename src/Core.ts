@@ -2,6 +2,7 @@ import type {
   OpenAPICore,
   OpenAPIPathItem,
   OpenAPISecurityRequirement,
+  OpenAPISecurityTypes,
   OpenAPITag,
 } from './Core.types.ts';
 import { createEndpointBuilder, EndpointBuilder } from './EndpointBuilder.ts';
@@ -193,6 +194,17 @@ class OpenAPI {
       url,
       description,
     };
+    return this;
+  }
+
+  addSecuritySchema(name: string, schema: { type: OpenAPISecurityTypes; description?: string }): this {
+    if (!this.raw.components) {
+      this.raw.components = { securitySchemes: {} };
+    }
+    if (!this.raw.components.securitySchemes) {
+      this.raw.components.securitySchemes = {};
+    }
+    this.raw.components.securitySchemes[name] = schema;
     return this;
   }
 }
