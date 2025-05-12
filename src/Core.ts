@@ -197,7 +197,10 @@ class OpenAPI {
     return this;
   }
 
-  addSecuritySchema(name: string, schema: { type: OpenAPISecurityTypes; description?: string }): this {
+  addSecuritySchema(
+    name: string,
+    schema: { type: OpenAPISecurityTypes; schema: string; description?: string }
+  ): this {
     if (!this.raw.components) {
       this.raw.components = { securitySchemes: {} };
     }
