@@ -4,10 +4,13 @@ import type {
   OpenAPISecurityRequirement,
   OpenAPISecurityTypes,
   OpenAPITag,
-} from './Core.types.ts';
-import { createEndpointBuilder, EndpointBuilder } from './EndpointBuilder.ts';
-import { createEndpointPath, type EndpointPath } from './EndpointPath.ts';
-import type { AllowedLicenses } from './Licenses.types.ts';
+} from "./Core.types.ts";
+import {
+  createEndpointBuilder,
+  type EndpointBuilder,
+} from "./EndpointBuilder.ts";
+import { createEndpointPath, type EndpointPath } from "./EndpointPath.ts";
+import type { AllowedLicenses } from "./Licenses.types.ts";
 
 class OpenAPI {
   private raw: OpenAPICore;
@@ -15,10 +18,10 @@ class OpenAPI {
 
   constructor() {
     this.raw = {
-      openapi: '3.1.0',
+      openapi: "3.1.0",
       info: {
-        title: 'OpenAPI 3.1.0',
-        version: '1.0.0',
+        title: "OpenAPI 3.1.0",
+        version: "1.0.0",
       },
     };
     this.endpoints = [];
@@ -37,8 +40,8 @@ class OpenAPI {
       for (const endpoint of this.endpoints) {
         if (!endpoint.path || !endpoint.method) {
           console.warn(
-            'Endpoint is missing path or method, skipping',
-            endpoint
+            "Endpoint is missing path or method, skipping",
+            endpoint,
           );
           continue;
         }
@@ -108,19 +111,19 @@ class OpenAPI {
   }
 
   setLicenseName(name: string): this {
-    this.raw.info.license = this.raw.info.license || { name: '' };
+    this.raw.info.license = this.raw.info.license || { name: "" };
     this.raw.info.license.name = name;
     return this;
   }
 
   setLicenseUrl(url: string): this {
-    this.raw.info.license = this.raw.info.license || { name: '' };
+    this.raw.info.license = this.raw.info.license || { name: "" };
     this.raw.info.license.url = url;
     return this;
   }
 
   setLicenseIdentifier(identifier: AllowedLicenses): this {
-    this.raw.info.license = this.raw.info.license || { name: '' };
+    this.raw.info.license = this.raw.info.license || { name: "" };
     this.raw.info.license.identifier = identifier;
     return this;
   }
@@ -149,7 +152,7 @@ class OpenAPI {
   }
 
   setSecurity(scheme: {
-    type: 'apiKey' | 'http' | 'oauth2' | 'openIdConnect';
+    type: "apiKey" | "http" | "oauth2" | "openIdConnect";
     name: string;
     scopes?: string[];
   }): this {
@@ -199,9 +202,9 @@ class OpenAPI {
 
   addSecuritySchema(
     name: string,
-    scheme: { 
-      type: OpenAPISecurityTypes; 
-      scheme?: string;  // Correct property for HTTP auth
+    scheme: {
+      type: OpenAPISecurityTypes;
+      scheme?: string; // Correct property for HTTP auth
       bearerFormat?: string; // For JWT format specification
       name?: string; // For apiKey type
       in?: string; // For apiKey type
@@ -209,7 +212,7 @@ class OpenAPI {
       // deno-lint-ignore no-explicit-any
       flows?: Record<string, any>; // For oauth2 type
       description?: string;
-    }
+    },
   ): this {
     if (!this.raw.components) {
       this.raw.components = { securitySchemes: {} };

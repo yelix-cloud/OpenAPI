@@ -129,7 +129,7 @@ class EndpointBuilder {
     return this;
   }
 
-  addRawParameter(obj: OpenAPIParameter ): this {
+  addRawParameter(obj: OpenAPIParameter): this {
     if (!this.operation.parameters) {
       this.operation.parameters = [];
     }
