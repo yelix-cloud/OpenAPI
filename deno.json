@@ -1,5 +1,5 @@
 {
-  "name": "@murat/openapi",
+  "name": "@yelix/openapi",
   "exports": "./mod.ts",
   "version": "0.1.17",
   "tasks": {
